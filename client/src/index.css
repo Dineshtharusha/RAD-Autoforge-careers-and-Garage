@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: #080B10;
+  color: #E2E8F0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom luxury scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0B0E14;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A3348;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E5A93C;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(16, 20, 29, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(229, 169, 60, 0.15);
+}
+
+.glass-card {
+  background: rgba(14, 18, 26, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(229, 169, 60, 0.4);
+  box-shadow: 0 10px 30px -5px rgba(229, 169, 60, 0.15);
+}
+
+.gold-gradient-btn {
+  background: linear-gradient(135deg, #F3BA4F 0%, #D49826 100%);
+  color: #0B0E14;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.gold-gradient-btn:hover {
+  background: linear-gradient(135deg, #FAD078 0%, #E5A93C 100%);
+  box-shadow: 0 0 20px rgba(229, 169, 60, 0.4);
+  transform: translateY(-1px);
+}
+
+.gold-text-gradient {
+  background: linear-gradient(135deg, #FFE8B0 0%, #E5A93C 50%, #C78B1B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
