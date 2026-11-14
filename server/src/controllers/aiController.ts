@@ -22,7 +22,50 @@ export const diagnoseVehicleIssue = async (req: Request, res: Response): Promise
     const symptomsLower = symptoms.toLowerCase();
     let diagnostic: DiagnosticResponse;
 
-    if (symptomsLower.includes('brake') || symptomsLower.includes('squeak') || symptomsLower.includes('grind') || symptomsLower.includes('stopping')) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    let usedLiveGemini = false;
+
+    if (apiKey && apiKey.trim() !== '') {
+      try {
+        const prompt = `You are an AutoForge Master Diagnostic Engineer. A client vehicle: ${vehicleYear || ''} ${vehicleMake || ''} ${vehicleModel || ''} with ${mileage || 'unknown'} km is reporting: "${symptoms}".
+Respond ONLY with a valid JSON object matching this TypeScript interface without any backticks:
+{
+  "issueTitle": "Concise technical diagnosis title",
+  "severity": "Low" or "Medium" or "High" or "Critical",
+  "potentialCauses": ["cause 1", "cause 2", "cause 3"],
+  "recommendedServices": ["Brake Service", "Diagnostics", "Oil Change", "Detailing", "Engine Repair", "Tire Services"],
+  "estimatedCostRange": "$180 - $350",
+  "safetyAdvice": "Crucial driver safety instruction",
+  "suggestedAction": "Next action step"
+}`;
+
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+            }),
+          }
+        );
+
+        if (geminiRes.ok) {
+          const geminiData: any = await geminiRes.json();
+          const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (rawText) {
+            const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+            diagnostic = JSON.parse(cleanJson);
+            usedLiveGemini = true;
+          }
+        }
+      } catch (geminiErr) {
+        console.warn('[Gemini Live API fallback to expert rule engine]:', geminiErr);
+      }
+    }
+
+    if (!diagnostic!) {
+      if (symptomsLower.includes('brake') || symptomsLower.includes('squeak') || symptomsLower.includes('grind') || symptomsLower.includes('stopping')) {
       diagnostic = {
         issueTitle: 'Braking System Friction Wear & Rotor Scoring',
         severity: 'High',
@@ -93,6 +136,7 @@ export const diagnoseVehicleIssue = async (req: Request, res: Response): Promise
         suggestedAction: 'Bring your vehicle to any AutoForge certified workshop for an on-lift diagnostic scan.',
       };
     }
+  }
 
     res.json({
       success: true,
@@ -101,7 +145,9 @@ export const diagnoseVehicleIssue = async (req: Request, res: Response): Promise
         symptomsAnalyzed: symptoms,
         analysis: diagnostic,
         analyzedAt: new Date().toISOString(),
-        poweredBy: 'AutoForge AI Diagnostic Engine v2.0 (Powered by Gemini Architecture)',
+        poweredBy: usedLiveGemini
+          ? 'Google Gemini 1.5 Flash (Live API)'
+          : 'AutoForge AI Diagnostic Engine v2.0 (Powered by Gemini Architecture)',
       },
     });
   } catch (error: any) {
