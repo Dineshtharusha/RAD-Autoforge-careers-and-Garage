@@ -70,7 +70,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       const file = e.target.files[0];
       setUploadingPhoto(true);
       setPhotoName(file.name);
-      const { url, error } = await uploadFileToSupabase(file, 'autoforge-storage', 'vehicle-photos');
+      const { url, error } = await uploadFileToSupabase(file, 'grage', 'vehicle-photos');
       setUploadingPhoto(false);
       if (!error && url) {
         setPhotoUrl(url);

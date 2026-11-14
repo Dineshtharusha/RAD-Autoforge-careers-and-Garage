@@ -62,7 +62,7 @@ export const CareersPage: React.FC<CareersPageProps> = ({
       const file = e.target.files[0];
       setUploadingResume(true);
       setUploadedResumeName(file.name);
-      const { url, error } = await uploadFileToSupabase(file, 'autoforge-storage', 'resumes');
+      const { url, error } = await uploadFileToSupabase(file, 'grage', 'resumes');
       setUploadingResume(false);
       if (!error && url) {
         setUploadedResumeUrl(url);
