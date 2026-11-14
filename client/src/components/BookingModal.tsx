@@ -5,6 +5,7 @@ import { addBooking, setBookingLoading } from '../redux/slices/bookingSlice';
 import { api, mockServices, mockWorkshops } from '../services/api';
 import { Service, Workshop } from '../types';
 import { generateBookingInvoicePDF } from '../utils/pdfGenerator';
+import { uploadFileToSupabase } from '../services/supabaseClient';
 import {
   X,
   Calendar,
@@ -16,6 +17,8 @@ import {
   ShieldCheck,
   AlertCircle,
   Loader2,
+  Camera,
+  Cloud,
 } from 'lucide-react';
 
 interface BookingModalProps {
@@ -58,6 +61,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [appointmentDate, setAppointmentDate] = useState('2026-11-20');
   const [timeSlot, setTimeSlot] = useState('10:00 AM');
   const [notes, setNotes] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoName, setPhotoName] = useState<string | null>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadingPhoto(true);
+      setPhotoName(file.name);
+      const { url, error } = await uploadFileToSupabase(file, 'autoforge-storage', 'vehicle-photos');
+      setUploadingPhoto(false);
+      if (!error && url) {
+        setPhotoUrl(url);
+      }
+    }
+  };
 
   // States
   const [loading, setLoading] = useState(false);
@@ -93,7 +112,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       },
       appointmentDate,
       timeSlot,
-      notes,
+      notes: photoUrl ? `${notes ? notes + ' | ' : ''}Attached Photo: ${photoUrl}` : notes,
     };
 
     try {
@@ -385,6 +404,39 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       </button>
                     ))}
                   </div>
+                </div>
+              </div>
+
+              {/* Supabase Vehicle Photo Upload */}
+              <div className="p-3 rounded-xl bg-[#141A26] border border-[#232B3C] space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-gray-300 uppercase flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-[#E5A93C]" />
+                    <span>Attach Vehicle/Dashboard Photo (Optional)</span>
+                  </label>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                    <Cloud className="w-3 h-3" /> Supabase Storage
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1A2232] hover:bg-[#202A3C] border border-[#2B3549] text-xs text-gray-200 transition-colors">
+                    <Camera className="w-3.5 h-3.5 text-[#E5A93C]" />
+                    <span>{uploadingPhoto ? 'Uploading to Supabase...' : 'Select Photo...'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploadingPhoto}
+                    />
+                  </label>
+
+                  {photoName && (
+                    <span className="text-xs text-emerald-400 truncate max-w-[200px]">
+                      ✓ {photoName}
+                    </span>
+                  )}
                 </div>
               </div>
 

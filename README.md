@@ -22,6 +22,7 @@
 5. **AI Vehicle Diagnostic Assistant (Advanced Feature #1):** An intelligent automotive diagnostic engine powered by the Gemini architecture that analyzes real-time customer symptom reports, error codes, and vehicle mileage to deliver root-cause diagnostics, severity rankings, safety guidance, and estimated repair costs.
 6. **PDF Tax Invoice & Work Order Generator (Advanced Feature #2):** Client-side vector PDF generation that outputs official branded tax invoices with QR verification, breakdown of labor charges, and 12-month factory warranty stamps.
 7. **Executive Analytics Dashboard (Advanced Feature #3):** Real-time administrative business intelligence console monitoring revenue, service bay occupancy rates, booking pipelines, and career applicant vetting.
+8. **Supabase Cloud Media & Document Storage (Advanced Feature #4):** Integration with Supabase Cloud Storage (`@supabase/supabase-js`) enabling candidate resume document uploads (PDF/DOC) and customer vehicle condition photo uploads with instant public asset resolution.
 
 ---
 
@@ -35,6 +36,7 @@
 - **Icons:** Lucide React
 - **HTTP Client:** Axios (with Bearer JWT request/response interceptors)
 - **Document Export:** jsPDF (vector PDF invoice generator)
+- **Cloud Storage:** Supabase Storage (`@supabase/supabase-js`) for candidate resumes and vehicle photo attachments
 
 ### Backend Architecture
 - **Runtime:** Node.js (v20+ / v22+)

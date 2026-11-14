@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { RootState } from '../redux/store';
-import { Job } from '../types';
+import type { RootState } from '../redux/store';
+import type { Job } from '../types';
 import { mockJobs, api } from '../services/api';
+import { uploadFileToSupabase, isSupabaseConfigured } from '../services/supabaseClient';
 import {
   Wrench,
   Calendar,
@@ -12,14 +13,15 @@ import {
   Star,
   TrendingUp,
   ShieldCheck,
-  ArrowRight,
   MapPin,
   DollarSign,
-  Briefcase,
   X,
   CheckCircle,
   Loader2,
   AlertCircle,
+  Upload,
+  FileText,
+  Cloud,
 } from 'lucide-react';
 
 interface CareersPageProps {
@@ -49,6 +51,25 @@ export const CareersPage: React.FC<CareersPageProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Supabase Cloud Storage state
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [uploadedResumeName, setUploadedResumeName] = useState<string | null>(null);
+  const [uploadedResumeUrl, setUploadedResumeUrl] = useState<string | null>(null);
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadingResume(true);
+      setUploadedResumeName(file.name);
+      const { url, error } = await uploadFileToSupabase(file, 'autoforge-storage', 'resumes');
+      setUploadingResume(false);
+      if (!error && url) {
+        setUploadedResumeUrl(url);
+        setPortfolioOrLinkedIn(url);
+      }
+    }
+  };
 
   const departments = [
     { id: 'all', label: 'All Openings' },
@@ -495,15 +516,49 @@ export const CareersPage: React.FC<CareersPageProps> = ({
                     </div>
                   </div>
 
+                  {/* Supabase Storage Resume Upload Field */}
+                  <div className="p-3.5 rounded-xl bg-[#141A26] border border-[#232B3C] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-semibold text-gray-300 uppercase flex items-center gap-1.5">
+                        <Upload className="w-3.5 h-3.5 text-[#E5A93C]" />
+                        <span>Upload Resume / CV (PDF or DOC)</span>
+                      </label>
+                      <span className="text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                        <Cloud className="w-3 h-3" /> Supabase Storage
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-[#1A2232] hover:bg-[#202A3C] border border-[#2B3549] text-xs text-gray-200 transition-colors">
+                        <FileText className="w-4 h-4 text-[#E5A93C]" />
+                        <span>{uploadingResume ? 'Uploading to Supabase...' : 'Choose File...'}</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          onChange={handleResumeUpload}
+                          className="hidden"
+                          disabled={uploadingResume}
+                        />
+                      </label>
+
+                      {uploadedResumeName && (
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span className="truncate max-w-[200px]">{uploadedResumeName}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-[11px] font-semibold text-gray-300 uppercase mb-1">
-                      LinkedIn / Portfolio URL (Optional)
+                      LinkedIn or Portfolio Link (Optional)
                     </label>
                     <input
                       type="url"
                       value={portfolioOrLinkedIn}
                       onChange={(e) => setPortfolioOrLinkedIn(e.target.value)}
-                      placeholder="https://linkedin.com/in/username"
+                      placeholder="https://linkedin.com/in/username or resume URL"
                       className="w-full bg-[#151B27] border border-[#2B3549] text-xs text-white rounded p-2.5 outline-none focus:border-[#E5A93C]"
                     />
                   </div>
