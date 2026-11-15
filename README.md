@@ -16,7 +16,7 @@
 
 ### Core Business Capabilities:
 1. **Premium Garage Services Catalog:** Browse, filter, and inspect detailed specifications for specialized automotive maintenance (High-Performance Oil Changes, Brembo Brake Upgrades, OEM Telemetry Diagnostics, 9H Ceramic Detailing, Engine Blueprints, and Laser Wheel Alignments).
-2. **State-of-the-Art International Workshop Network:** Discover superhub facilities across **Bengaluru, Dubai, Mumbai, and London** featuring active bay counts, technician headcounts, and specialized capabilities.
+2. **State-of-the-Art Regional Workshop Network:** Discover superhub facilities across **Galle, Hikkaduwa, and Ambalangoda** featuring active bay counts, technician headcounts, and specialized capabilities.
 3. **Real-Time Bay Reservation & Scheduling:** Interactive appointment booking with instant service selection, vehicle telemetry data capture, date/slot picker, and live status tracking (`pending`, `confirmed`, `in-progress`, `completed`, `cancelled`).
 4. **Automotive Careers & Master Guild Recruitment:** Explore high-salary technician roles, performance tuner openings, and submit comprehensive career applications with certification and experience records.
 5. **AI Vehicle Diagnostic Assistant (Advanced Feature #1):** An intelligent automotive diagnostic engine powered by the Gemini architecture that analyzes real-time customer symptom reports, error codes, and vehicle mileage to deliver root-cause diagnostics, severity rankings, safety guidance, and estimated repair costs.

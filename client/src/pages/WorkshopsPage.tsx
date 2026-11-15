@@ -41,7 +41,7 @@ export const WorkshopsPage: React.FC<WorkshopsPageProps> = ({
           (w) => w.city.toLowerCase() === selectedCity.toLowerCase()
         );
 
-  const cities = ['All Locations', 'Bengaluru', 'Dubai', 'Mumbai', 'London'];
+  const cities = ['All Locations', 'Galle', 'Hikkaduwa', 'Ambalangoda'];
 
   return (
     <div className="pt-24 pb-20 bg-[#080B10] min-h-screen text-white">
@@ -83,7 +83,7 @@ export const WorkshopsPage: React.FC<WorkshopsPageProps> = ({
               </a>
 
               <button
-                onClick={() => alert('Tour video player opening: Take a 360-degree virtual tour of AutoForge Dubai Superhub!')}
+                onClick={() => alert('Tour video player opening: Take a 360-degree virtual tour of AutoForge Galle Superhub!')}
                 className="px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/20 text-xs font-bold tracking-widest uppercase flex items-center gap-2 transition-all duration-300"
               >
                 <Play className="w-3.5 h-3.5 fill-current text-[#E5A93C]" />

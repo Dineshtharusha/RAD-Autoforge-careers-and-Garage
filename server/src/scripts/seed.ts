@@ -136,15 +136,15 @@ const seedData = async () => {
 
     console.log(`[AutoForge Seeder] Seeded ${services.length} services.`);
 
-    // 3. Create Workshops (matching Image 2)
+    // 3. Create Workshops (Galle, Hikkaduwa, Ambalangoda)
     const workshops = await Workshop.insertMany([
       {
-        name: 'AutoForge Workshop',
-        city: 'Bengaluru',
-        country: 'India',
-        address: '42 Prestige Tech Boulevard, Whitefield, Bengaluru 560066',
-        phone: '+91 80 4920 1800',
-        email: 'bengaluru@autoforge.com',
+        name: 'AutoForge Galle Superhub',
+        city: 'Galle',
+        country: 'Sri Lanka',
+        address: '42 Wakwella Road, Galle',
+        phone: '+94 91 223 4800',
+        email: 'galle@autoforge.com',
         baysCount: 18,
         techniciansCount: 25,
         specialization: 'Luxury & Performance Specialist',
@@ -155,28 +155,28 @@ const seedData = async () => {
         isActive: true,
       },
       {
-        name: 'AutoForge Workshop',
-        city: 'Dubai',
-        country: 'United Arab Emirates',
-        address: 'Al Quoz Industrial Area 3, Sheikh Zayed Hub, Dubai',
-        phone: '+971 4 338 9000',
-        email: 'dubai@autoforge.com',
+        name: 'AutoForge Hikkaduwa Workshop',
+        city: 'Hikkaduwa',
+        country: 'Sri Lanka',
+        address: '128 Galle Road, Hikkaduwa',
+        phone: '+94 91 438 9000',
+        email: 'hikkaduwa@autoforge.com',
         baysCount: 20,
         techniciansCount: 30,
         specialization: 'German & European Specialist',
         image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
         rating: 4.98,
         operatingHours: 'Mon - Sun: 7:30 AM - 9:00 PM',
-        amenities: ['Climate Controlled Bays', 'Supercar Cleanroom', 'Helipad Access', 'Executive Workspace'],
+        amenities: ['Climate Controlled Bays', 'Supercar Cleanroom', 'Coastal Concierge', 'Executive Workspace'],
         isActive: true,
       },
       {
-        name: 'AutoForge Workshop',
-        city: 'Mumbai',
-        country: 'India',
-        address: 'BKC Central Hub, Bandra Kurla Complex, Mumbai 400051',
-        phone: '+91 22 6670 4100',
-        email: 'mumbai@autoforge.com',
+        name: 'AutoForge Ambalangoda Workshop',
+        city: 'Ambalangoda',
+        country: 'Sri Lanka',
+        address: '85 Main Street, Ambalangoda',
+        phone: '+94 91 225 8100',
+        email: 'ambalangoda@autoforge.com',
         baysCount: 16,
         techniciansCount: 20,
         specialization: 'Electric & Hybrid Specialist',
@@ -184,22 +184,6 @@ const seedData = async () => {
         rating: 4.92,
         operatingHours: 'Mon - Sat: 8:00 AM - 8:00 PM',
         amenities: ['Battery Diagnostic Lab', 'Customer Co-working', 'Rapid Charging Superstation'],
-        isActive: true,
-      },
-      {
-        name: 'AutoForge Workshop',
-        city: 'London',
-        country: 'United Kingdom',
-        address: '15 Battersea Park Road, London SW8 4LR',
-        phone: '+44 20 7946 0912',
-        email: 'london@autoforge.com',
-        baysCount: 14,
-        techniciansCount: 18,
-        specialization: 'British Classic & Supercar Heritage',
-        image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=800&q=80',
-        rating: 4.96,
-        operatingHours: 'Mon - Fri: 8:00 AM - 6:30 PM',
-        amenities: ['Heritage Restoration Studio', 'Concierge Vehicle Transport', 'Member Lounge'],
         isActive: true,
       },
     ]);
@@ -211,7 +195,7 @@ const seedData = async () => {
       {
         title: 'Senior Master Diagnostic Technician',
         department: 'Diagnostics',
-        location: 'Bengaluru & Dubai',
+        location: 'Galle & Hikkaduwa',
         type: 'Full-time',
         experienceLevel: 'Senior Master',
         salaryRange: '$75,000 - $110,000 / yr',
@@ -236,7 +220,7 @@ const seedData = async () => {
       {
         title: 'High-Performance Engine Specialist',
         department: 'Performance & Tuning',
-        location: 'Dubai',
+        location: 'Hikkaduwa',
         type: 'Full-time',
         experienceLevel: 'Specialist',
         salaryRange: '$85,000 - $130,000 / yr',
@@ -251,7 +235,7 @@ const seedData = async () => {
           'Experience with forged internals, bore honing, and head porting',
         ],
         benefits: [
-          'Tax-free salary package + luxury housing allowance in Dubai',
+          'Competitive salary package + relocation allowance',
           'Access to cutting-edge CNC and dyno testing labs',
         ],
         isOpen: true,
@@ -259,7 +243,7 @@ const seedData = async () => {
       {
         title: 'EV High-Voltage Battery & Drivetrain Technician',
         department: 'Technician',
-        location: 'Mumbai & Bengaluru',
+        location: 'Ambalangoda & Galle',
         type: 'Full-time',
         experienceLevel: 'Mid Level',
         salaryRange: '$55,000 - $80,000 / yr',
@@ -282,7 +266,7 @@ const seedData = async () => {
       {
         title: 'Paint Protection & Ceramic Detailing Artisan',
         department: 'Body & Detailing',
-        location: 'Bengaluru',
+        location: 'Galle',
         type: 'Full-time',
         experienceLevel: 'Mid Level',
         salaryRange: '$40,000 - $65,000 / yr',
@@ -310,12 +294,12 @@ const seedData = async () => {
     const booking1 = await Booking.create({
       user: customerUser._id,
       service: services[0]._id, // Oil Change
-      workshop: workshops[0]._id, // Bengaluru
+      workshop: workshops[0]._id, // Galle
       vehicle: {
         make: 'BMW',
         model: 'M3 Competition',
         year: 2023,
-        plateNumber: 'KA 03 AF 4492',
+        plateNumber: 'WP CAB-4492',
         mileage: 18500,
       },
       appointmentDate: '2026-11-15',
@@ -330,12 +314,12 @@ const seedData = async () => {
     const booking2 = await Booking.create({
       user: customerUser._id,
       service: services[1]._id, // Brake Service
-      workshop: workshops[1]._id, // Dubai
+      workshop: workshops[1]._id, // Hikkaduwa
       vehicle: {
         make: 'Porsche',
         model: '911 GT3',
         year: 2024,
-        plateNumber: 'DXB-AF-911',
+        plateNumber: 'SP CAA-9110',
         mileage: 8200,
       },
       appointmentDate: '2026-11-18',

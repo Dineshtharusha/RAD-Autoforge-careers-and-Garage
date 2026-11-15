@@ -130,7 +130,7 @@ export const App: React.FC = () => {
                 <Globe className="w-10 h-10 text-[#E5A93C] mx-auto" />
                 <h3 className="text-lg font-bold font-serif text-white">Global Superhub Network</h3>
                 <p className="text-xs text-gray-400 leading-relaxed">
-                  Spanning Bengaluru, Dubai, Mumbai, and London with climate-controlled bays, dyno testing labs, and luxury lounges.
+                  Spanning Galle, Hikkaduwa, and Ambalangoda with climate-controlled bays, dyno testing labs, and luxury lounges.
                 </p>
               </div>
             </div>

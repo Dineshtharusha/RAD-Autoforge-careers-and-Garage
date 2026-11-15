@@ -76,8 +76,8 @@ export const AdminDashboard: React.FC = () => {
             invoiceNumber: 'AF-INV-2026-8821',
             user: { name: 'Alexander Wright', email: 'alexander@autoforge.com' },
             service: { name: 'Oil Change', price: 149 },
-            workshop: { name: 'AutoForge Workshop', city: 'Bengaluru' },
-            vehicle: { make: 'BMW', model: 'M3 Competition', plateNumber: 'KA 03 AF 4492' },
+            workshop: { name: 'AutoForge Galle Superhub', city: 'Galle' },
+            vehicle: { make: 'BMW', model: 'M3 Competition', plateNumber: 'WP CAB-4492' },
             appointmentDate: '2026-11-15',
             timeSlot: '10:00 AM',
             status: 'confirmed',
@@ -86,10 +86,10 @@ export const AdminDashboard: React.FC = () => {
           {
             _id: 'b-102',
             invoiceNumber: 'AF-INV-2026-9043',
-            user: { name: 'Farooq Al-Maktoum', email: 'farooq@autoforge.com' },
+            user: { name: 'Kavinda Perera', email: 'kavinda@autoforge.com' },
             service: { name: 'Brake Service', price: 289 },
-            workshop: { name: 'AutoForge Workshop', city: 'Dubai' },
-            vehicle: { make: 'Porsche', model: '911 GT3', plateNumber: 'DXB-AF-911' },
+            workshop: { name: 'AutoForge Hikkaduwa Workshop', city: 'Hikkaduwa' },
+            vehicle: { make: 'Porsche', model: '911 GT3', plateNumber: 'SP CAA-9110' },
             appointmentDate: '2026-11-18',
             timeSlot: '02:00 PM',
             status: 'in-progress',
@@ -326,12 +326,12 @@ export const AdminDashboard: React.FC = () => {
               {/* Hub Performance */}
               <div className="p-6 rounded-2xl bg-[#0F141F] border border-[#232B3C]">
                 <h3 className="text-base font-bold font-serif text-white mb-4">
-                  International Superhubs Telemetry
+                  Regional Superhubs Telemetry
                 </h3>
                 <div className="space-y-3 text-xs">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-[#141A26]">
                     <div>
-                      <span className="font-bold text-white block">Bengaluru Workshop</span>
+                      <span className="font-bold text-white block">Galle Superhub</span>
                       <span className="text-gray-400">18 Bays • 25 Technicians</span>
                     </div>
                     <span className="text-[#E5A93C] font-bold">94% Occupancy</span>
@@ -339,7 +339,7 @@ export const AdminDashboard: React.FC = () => {
 
                   <div className="flex items-center justify-between p-3 rounded-lg bg-[#141A26]">
                     <div>
-                      <span className="font-bold text-white block">Dubai Superbay</span>
+                      <span className="font-bold text-white block">Hikkaduwa Workshop</span>
                       <span className="text-gray-400">20 Bays • 30 Technicians</span>
                     </div>
                     <span className="text-[#E5A93C] font-bold">98% Occupancy</span>
@@ -347,7 +347,7 @@ export const AdminDashboard: React.FC = () => {
 
                   <div className="flex items-center justify-between p-3 rounded-lg bg-[#141A26]">
                     <div>
-                      <span className="font-bold text-white block">Mumbai Hub</span>
+                      <span className="font-bold text-white block">Ambalangoda Hub</span>
                       <span className="text-gray-400">16 Bays • 20 Technicians</span>
                     </div>
                     <span className="text-[#E5A93C] font-bold">88% Occupancy</span>

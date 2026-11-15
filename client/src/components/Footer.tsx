@@ -116,10 +116,9 @@ export const Footer: React.FC = () => {
               Workshop Network
             </h4>
             <ul className="space-y-2 text-xs text-gray-400">
-              <li>📍 <strong className="text-white">Bengaluru</strong> — Whitefield Tech Hub</li>
-              <li>📍 <strong className="text-white">Dubai</strong> — Al Quoz Industrial Hub</li>
-              <li>📍 <strong className="text-white">Mumbai</strong> — BKC Central Superbay</li>
-              <li>📍 <strong className="text-white">London</strong> — Battersea Performance Studio</li>
+              <li>📍 <strong className="text-white">Galle</strong> — Fort Coastal Superhub</li>
+              <li>📍 <strong className="text-white">Hikkaduwa</strong> — Beachway Performance Bay</li>
+              <li>📍 <strong className="text-white">Ambalangoda</strong> — Southern Tech Center</li>
             </ul>
           </div>
 
