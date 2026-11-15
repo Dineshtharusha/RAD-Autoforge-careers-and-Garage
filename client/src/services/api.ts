@@ -231,3 +231,11 @@ export const mockJobs: Job[] = [
     isOpen: true,
   },
 ];
+
+export const carrierApi = {
+  requestCarrier: (data: any) => api.post('/carriers/request', data),
+  getTracking: (idOrCode: string) => api.get(`/carriers/${idOrCode}`),
+  getMyRequests: (phone?: string) => api.get(`/carriers/my-requests${phone ? `?phone=${encodeURIComponent(phone)}` : ''}`),
+  updateStatus: (id: string, update: any) => api.patch(`/carriers/${id}/status`, update),
+};
+

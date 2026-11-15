@@ -110,3 +110,59 @@ export interface AIDiagnosticResult {
   poweredBy: string;
 }
 
+export interface CarrierDriver {
+  id: string;
+  name: string;
+  phone: string;
+  truckPlate: string;
+  truckModel: string;
+  rating: number;
+  avatar: string;
+}
+
+export interface CarrierRequest {
+  _id: string;
+  user?: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  pickupLocation: {
+    address: string;
+    city: string;
+    lat: number;
+    lng: number;
+  };
+  destinationWorkshop: {
+    workshopId?: string;
+    name: string;
+    city: string;
+    address: string;
+    lat: number;
+    lng: number;
+    phone: string;
+  };
+  carrierType: 'flatbed' | 'wheel_lift' | 'ev_heavy';
+  vehicle: {
+    make: string;
+    model: string;
+    year?: number;
+    plateNumber: string;
+    breakdownReason: string;
+    imageUrl?: string;
+  };
+  driver: CarrierDriver;
+  status: 'dispatched' | 'en_route' | 'arrived' | 'towing' | 'completed' | 'cancelled';
+  currentLocation: {
+    lat: number;
+    lng: number;
+  };
+  distanceKm: number;
+  estimatedArrivalMinutes: number;
+  estimatedCost: number;
+  paymentStatus: 'pending' | 'completed' | 'cash_on_delivery';
+  trackingCode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+
