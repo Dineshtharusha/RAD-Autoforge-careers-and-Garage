@@ -93,6 +93,7 @@ export const Footer: React.FC = () => {
               <li><span className="hover:text-white transition-colors cursor-pointer">Ceramic Coating & Detailing</span></li>
               <li><span className="hover:text-white transition-colors cursor-pointer">Dyno Tuning & Engine Rebuild</span></li>
               <li><span className="hover:text-white transition-colors cursor-pointer">Road-Force Wheel Balancing</span></li>
+              <li><span className="text-[#E5A93C] font-semibold hover:text-amber-300 transition-colors cursor-pointer">🚨 24/7 Roadside Carrier & Tow</span></li>
             </ul>
           </div>
 

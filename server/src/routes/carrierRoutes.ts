@@ -8,7 +8,7 @@ import {
 
 const router = Router();
 
-// Dispatch a new carrier truck (Uber / PickMe style)
+// Dispatch a new carrier truck with live GPS tracking
 router.post('/request', requestCarrier);
 
 // Get user carrier requests or recent requests

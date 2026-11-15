@@ -16,6 +16,7 @@ import {
   Sparkles,
   ArrowRight,
   Play,
+  Truck,
 } from 'lucide-react';
 
 interface HomeProps {
@@ -84,6 +85,15 @@ export const Home: React.FC<HomeProps> = ({
             >
               <Bot className="w-4 h-4 text-[#E5A93C]" />
               <span>AI DIAGNOSTIC BOT</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('carrier')}
+              className="px-6 py-4 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-all duration-300 shadow-md"
+              title="24/7 Breakdown Recovery Carrier"
+            >
+              <Truck className="w-4 h-4 text-red-400 animate-pulse" />
+              <span>ROADSIDE CARRIER 🚨</span>
             </button>
           </div>
         </div>

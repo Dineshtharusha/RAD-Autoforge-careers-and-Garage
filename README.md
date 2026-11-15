@@ -23,6 +23,7 @@
 6. **PDF Tax Invoice & Work Order Generator (Advanced Feature #2):** Client-side vector PDF generation that outputs official branded tax invoices with QR verification, breakdown of labor charges, and 12-month factory warranty stamps.
 7. **Executive Analytics Dashboard (Advanced Feature #3):** Real-time administrative business intelligence console monitoring revenue, service bay occupancy rates, booking pipelines, and career applicant vetting.
 8. **Supabase Cloud Media & Document Storage (Advanced Feature #4):** Integration with Supabase Cloud Storage (`@supabase/supabase-js`) enabling candidate resume document uploads (PDF/DOC) and customer vehicle condition photo uploads with instant public asset resolution.
+9. **24/7 Roadside Carrier & Live Tow Tracker (Advanced Feature #5 — On-Demand Live GPS Telemetry):** On-demand breakdown carrier dispatch across Southern Sri Lanka (Galle, Hikkaduwa, Ambalangoda). Detects nearest garage hub, calculates route distance & towing fare, assigns carrier truck (Hydraulic Flatbed, Wheel-Lift, or EV Heavy Carrier), and features real-time animated GPS telemetry tracking with live ETA, driver profile card (Chaminda, Sunil, Nalin), direct phone call button, and trip status progression.
 
 ---
 

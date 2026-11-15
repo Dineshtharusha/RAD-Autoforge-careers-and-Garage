@@ -10,6 +10,7 @@ import { WorkshopsPage } from './pages/WorkshopsPage';
 import { CareersPage } from './pages/CareersPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { CarrierPage } from './pages/CarrierPage';
 import { Service, Workshop } from './types';
 import { ShieldCheck, Award, Zap, Globe, Sparkles } from 'lucide-react';
 
@@ -91,6 +92,8 @@ export const App: React.FC = () => {
             onOpenAuth={() => handleOpenAuth('login')}
           />
         )}
+
+        {activeTab === 'carrier' && <CarrierPage />}
 
         {activeTab === 'admin' && <AdminDashboard />}
 
