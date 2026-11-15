@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from './redux/store';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
-import { AuthModal } from './components/AuthModal';
+import { AuthModal, AuthMode } from './components/AuthModal';
 import { BookingModal } from './components/BookingModal';
 import { AIConsultantModal } from './components/AIConsultantModal';
 import { Home } from './pages/Home';
@@ -15,16 +17,58 @@ import { Service, Workshop } from './types';
 import { ShieldCheck, Award, Zap, Globe, Sparkles } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('home');
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const isAdmin = Boolean(isAuthenticated && user?.role === 'admin');
+
+  // Default to admin dashboard if logged in as admin, else home
+  const [activeTab, setActiveTab] = useState<string>(isAdmin ? 'admin-overview' : 'home');
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [resetToken, setResetToken] = useState<string>('');
+  const [verifyToken, setVerifyToken] = useState<string>('');
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [aiModalOpen, setAiModalOpen] = useState(false);
 
   const [presetService, setPresetService] = useState<Service | null>(null);
   const [presetWorkshop, setPresetWorkshop] = useState<Workshop | null>(null);
 
-  const handleOpenAuth = (mode: 'login' | 'register' = 'login') => {
+  // Check for email verification or password reset tokens in URL query params
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const vToken = params.get('verifyToken');
+      const rToken = params.get('resetToken');
+
+      if (vToken) {
+        setVerifyToken(vToken);
+        setAuthMode('verify-email');
+        setAuthModalOpen(true);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (rToken) {
+        setResetToken(rToken);
+        setAuthMode('reset-password');
+        setAuthModalOpen(true);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch {
+      // Ignored in SSR/non-browser contexts
+    }
+  }, []);
+
+  // Automatic redirection: when admin logs in, land directly on admin dashboard; when logging out, return to customer home
+  useEffect(() => {
+    if (isAdmin) {
+      if (!activeTab.startsWith('admin')) {
+        setActiveTab('admin-overview');
+      }
+    } else {
+      if (activeTab.startsWith('admin')) {
+        setActiveTab('home');
+      }
+    }
+  }, [isAdmin]);
+
+  const handleOpenAuth = (mode: AuthMode = 'login') => {
     setAuthMode(mode);
     setAuthModalOpen(true);
   };
@@ -56,7 +100,13 @@ export const App: React.FC = () => {
 
       {/* Main Page Body */}
       <main className="flex-1">
-        {activeTab === 'home' && (
+        {/* Admin Dashboard - Rendered for all admin- prefixed tabs */}
+        {activeTab.startsWith('admin') && (
+          <AdminDashboard activeSection={activeTab} />
+        )}
+
+        {/* Customer Only Pages (Hidden when Admin is Active) */}
+        {!isAdmin && activeTab === 'home' && (
           <Home
             onNavigate={(tab) => {
               setActiveTab(tab);
@@ -68,37 +118,34 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'services' && (
+        {!isAdmin && activeTab === 'services' && (
           <ServicesPage
             onBookService={handleBookService}
             onOpenAI={() => setAiModalOpen(true)}
           />
         )}
 
-        {activeTab === 'workshops' && (
+        {!isAdmin && activeTab === 'workshops' && (
           <WorkshopsPage onBookWorkshop={handleBookWorkshop} />
         )}
 
-        {activeTab === 'careers' && (
+        {!isAdmin && activeTab === 'careers' && (
           <CareersPage
             onBookServiceClick={() => setBookingModalOpen(true)}
             onExploreServicesClick={() => setActiveTab('services')}
           />
         )}
 
-        {activeTab === 'my-bookings' && (
+        {!isAdmin && activeTab === 'my-bookings' && (
           <MyBookingsPage
             onOpenBooking={() => setBookingModalOpen(true)}
             onOpenAuth={() => handleOpenAuth('login')}
           />
         )}
 
-        {activeTab === 'carrier' && <CarrierPage />}
+        {!isAdmin && activeTab === 'carrier' && <CarrierPage />}
 
-        {activeTab === 'admin' && <AdminDashboard />}
-
-        {/* About Section */}
-        {activeTab === 'about' && (
+        {!isAdmin && activeTab === 'about' && (
           <div className="pt-28 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
             <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
               <span className="text-xs uppercase font-bold tracking-widest text-[#E5A93C]">
@@ -131,7 +178,7 @@ export const App: React.FC = () => {
 
               <div className="p-8 rounded-2xl bg-[#0F141F] border border-[#232B3C] text-center space-y-3">
                 <Globe className="w-10 h-10 text-[#E5A93C] mx-auto" />
-                <h3 className="text-lg font-bold font-serif text-white">Global Superhub Network</h3>
+                <h3 className="text-lg font-bold font-serif text-white">Regional Superhub Network</h3>
                 <p className="text-xs text-gray-400 leading-relaxed">
                   Spanning Galle, Hikkaduwa, and Ambalangoda with climate-controlled bays, dyno testing labs, and luxury lounges.
                 </p>
@@ -144,8 +191,14 @@ export const App: React.FC = () => {
       {/* Global Modals */}
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setResetToken('');
+          setVerifyToken('');
+        }}
         initialMode={authMode}
+        resetToken={resetToken}
+        verifyToken={verifyToken}
       />
 
       <BookingModal
@@ -166,8 +219,8 @@ export const App: React.FC = () => {
         onBookServicePreset={handleBookFromAI}
       />
 
-      {/* Footer */}
-      <Footer />
+      {/* Footer - ONLY FOR CUSTOMERS (Hides when Admin is logged in to keep console clean) */}
+      {!isAdmin && <Footer />}
     </div>
   );
 };
