@@ -4,9 +4,13 @@ import {
   getCarrierStatus,
   getMyCarrierRequests,
   updateCarrierStatus,
+  calculateDistancePreview,
 } from '../controllers/carrierController';
 
 const router = Router();
+
+// Calculate distance and nearest garage preview
+router.post('/calculate-distance', calculateDistancePreview);
 
 // Dispatch a new carrier truck with live GPS tracking
 router.post('/request', requestCarrier);

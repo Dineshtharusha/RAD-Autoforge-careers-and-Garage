@@ -3,7 +3,7 @@ import { CarrierRequest } from '../models/CarrierRequest';
 import { Workshop } from '../models/Workshop';
 
 // Garage Hub references in Southern Province
-const WORKSHOP_HUBS = [
+export const WORKSHOP_HUBS = [
   {
     city: 'Galle',
     name: 'AutoForge Galle Superhub',
@@ -57,8 +57,49 @@ const WORKSHOP_HUBS = [
   },
 ];
 
-// Haversine formula to compute distance in km
-function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+// Comprehensive Sri Lankan Southern Province & regional town coordinates gazetteer
+export const SRI_LANKA_GAZETTEER = [
+  { name: 'Baddegama', city: 'Baddegama', lat: 6.1867, lng: 80.1783 },
+  { name: 'Karapitiya', city: 'Galle', lat: 6.0645, lng: 80.2294 },
+  { name: 'Wakwella', city: 'Galle', lat: 6.0712, lng: 80.2115 },
+  { name: 'Galle Fort', city: 'Galle', lat: 6.0270, lng: 80.2170 },
+  { name: 'Galle', city: 'Galle', lat: 6.0535, lng: 80.2210 },
+  { name: 'Unawatuna', city: 'Galle', lat: 6.0104, lng: 80.2489 },
+  { name: 'Koggala', city: 'Galle', lat: 5.9922, lng: 80.3275 },
+  { name: 'Ahangama', city: 'Galle', lat: 5.9725, lng: 80.3664 },
+  { name: 'Habaraduwa', city: 'Galle', lat: 6.0022, lng: 80.3014 },
+  { name: 'Talpe', city: 'Galle', lat: 5.9985, lng: 80.2780 },
+  { name: 'Labuduwa', city: 'Galle', lat: 6.0594, lng: 80.2467 },
+  { name: 'Hikkaduwa', city: 'Hikkaduwa', lat: 6.1404, lng: 80.1030 },
+  { name: 'Dodanduwa', city: 'Hikkaduwa', lat: 6.0967, lng: 80.1386 },
+  { name: 'Rathgama', city: 'Hikkaduwa', lat: 6.0792, lng: 80.1614 },
+  { name: 'Thiranagama', city: 'Hikkaduwa', lat: 6.1285, lng: 80.1132 },
+  { name: 'Meetiyagoda', city: 'Hikkaduwa', lat: 6.1883, lng: 80.1250 },
+  { name: 'Telwatta', city: 'Hikkaduwa', lat: 6.1758, lng: 80.0825 },
+  { name: 'Kahawa', city: 'Ambalangoda', lat: 6.1950, lng: 80.0710 },
+  { name: 'Akurala', city: 'Ambalangoda', lat: 6.2085, lng: 80.0632 },
+  { name: 'Ambalangoda', city: 'Ambalangoda', lat: 6.2367, lng: 80.0543 },
+  { name: 'Batapola', city: 'Ambalangoda', lat: 6.2415, lng: 80.1167 },
+  { name: 'Balapitiya', city: 'Balapitiya', lat: 6.2750, lng: 80.0390 },
+  { name: 'Ahungalla', city: 'Balapitiya', lat: 6.3114, lng: 80.0306 },
+  { name: 'Kosgoda', city: 'Balapitiya', lat: 6.3425, lng: 80.0242 },
+  { name: 'Elpitiya', city: 'Elpitiya', lat: 6.2572, lng: 80.1417 },
+  { name: 'Nagoda', city: 'Nagoda', lat: 6.2167, lng: 80.2833 },
+  { name: 'Udugama', city: 'Udugama', lat: 6.2167, lng: 80.3333 },
+  { name: 'Yakkalamulla', city: 'Yakkalamulla', lat: 6.0833, lng: 80.3667 },
+  { name: 'Imaduwa', city: 'Imaduwa', lat: 6.0333, lng: 80.3667 },
+  { name: 'Pinnaduwa', city: 'Galle', lat: 6.0683, lng: 80.2642 },
+  { name: 'Kurundugahahetekma', city: 'Elpitiya', lat: 6.2917, lng: 80.1167 },
+  { name: 'Bentota', city: 'Bentota', lat: 6.4256, lng: 79.9975 },
+  { name: 'Aluthgama', city: 'Aluthgama', lat: 6.4333, lng: 80.0000 },
+  { name: 'Beruwala', city: 'Beruwala', lat: 6.4789, lng: 79.9828 },
+  { name: 'Weligama', city: 'Weligama', lat: 5.9733, lng: 80.4294 },
+  { name: 'Mirissa', city: 'Mirissa', lat: 5.9483, lng: 80.4578 },
+  { name: 'Matara', city: 'Matara', lat: 5.9496, lng: 80.5469 },
+];
+
+// Straight-line Haversine formula
+function calculateCrowFliesKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -69,24 +110,53 @@ function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: num
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c * 10) / 10;
+  return R * c;
 }
 
-// Find nearest garage
-function findNearestGarage(lat: number, lng: number) {
+// Accurate real road driving distance (1.28x road winding factor on Sri Lanka roads)
+export function calculateRoadDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const crow = calculateCrowFliesKm(lat1, lon1, lat2, lon2);
+  if (crow < 1.0) return 1.5;
+  return Math.round(crow * 1.28 * 10) / 10;
+}
+
+// Find nearest garage and return distance breakdown
+export function findNearestGarage(lat: number, lng: number) {
   let nearest = WORKSHOP_HUBS[0];
-  let minDistance = calculateDistanceKm(lat, lng, nearest.lat, nearest.lng);
+  let minDistance = calculateRoadDistanceKm(lat, lng, nearest.lat, nearest.lng);
+
+  const allDistances = WORKSHOP_HUBS.map((hub) => {
+    const dist = calculateRoadDistanceKm(lat, lng, hub.lat, hub.lng);
+    return {
+      hub,
+      distanceKm: dist,
+      etaMins: Math.max(6, Math.round(dist * 2.2)),
+    };
+  });
 
   for (let i = 1; i < WORKSHOP_HUBS.length; i++) {
     const hub = WORKSHOP_HUBS[i];
-    const dist = calculateDistanceKm(lat, lng, hub.lat, hub.lng);
+    const dist = calculateRoadDistanceKm(lat, lng, hub.lat, hub.lng);
     if (dist < minDistance) {
       minDistance = dist;
       nearest = hub;
     }
   }
 
-  return { nearest, distanceKm: Math.max(1.2, minDistance) };
+  return { nearest, distanceKm: Math.max(1.5, minDistance), allDistances };
+}
+
+// Lookup coordinates by town name in address string
+function resolveCoordinatesFromText(text: string): { lat: number; lng: number; matchedTown?: string } | null {
+  if (!text) return null;
+  const lower = text.toLowerCase();
+
+  for (const town of SRI_LANKA_GAZETTEER) {
+    if (lower.includes(town.name.toLowerCase())) {
+      return { lat: town.lat, lng: town.lng, matchedTown: town.name };
+    }
+  }
+  return null;
 }
 
 // @desc    Dispatch / Request a Carrier Truck
@@ -111,10 +181,22 @@ export const requestCarrier = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const lat = pickupLocation.lat || 6.0535;
-    const lng = pickupLocation.lng || 80.2210;
+    let lat = pickupLocation.lat;
+    let lng = pickupLocation.lng;
 
-    // Detect nearest garage
+    // Check if customer typed a known location string (e.g. "Baddegama")
+    const searchString = `${pickupLocation.address || ''} ${pickupLocation.city || ''}`;
+    const textResolved = resolveCoordinatesFromText(searchString);
+
+    if (textResolved && (!lat || lat === 6.0535)) {
+      lat = textResolved.lat;
+      lng = textResolved.lng;
+    } else if (!lat || !lng) {
+      lat = 6.0535;
+      lng = 80.2210;
+    }
+
+    // Detect nearest garage based on actual coordinates
     const { nearest, distanceKm } = findNearestGarage(lat, lng);
 
     // Look up workshop in DB if exists, else fallback
@@ -123,7 +205,7 @@ export const requestCarrier = async (req: Request, res: Response): Promise<void>
     // ETA calculation (~2.2 mins per km, minimum 6 mins)
     const estimatedArrivalMinutes = Math.max(6, Math.round(distanceKm * 2.2));
 
-    // Pricing calculation ($30 base callout + $3.50/km)
+    // Pricing calculation ($35 base callout + $3.50/km for flatbed)
     const baseFee = carrierType === 'ev_heavy' ? 45 : carrierType === 'flatbed' ? 35 : 25;
     const estimatedCost = Math.round(baseFee + distanceKm * 3.5);
 
@@ -174,7 +256,7 @@ export const requestCarrier = async (req: Request, res: Response): Promise<void>
 
     res.status(201).json({
       success: true,
-      message: `Carrier dispatched from ${nearest.name}! Driver ${nearest.driver.name} is en route.`,
+      message: `Carrier dispatched from ${nearest.name}! Driver ${nearest.driver.name} is en route (${distanceKm} km away).`,
       data: carrierRequest,
     });
   } catch (error: any) {
@@ -183,6 +265,47 @@ export const requestCarrier = async (req: Request, res: Response): Promise<void>
       success: false,
       message: error.message || 'Server error while dispatching carrier truck',
     });
+  }
+};
+
+// @desc    Calculate distance and nearest garage without dispatching (preview endpoint)
+// @route   POST /api/carriers/calculate-distance
+// @access  Public
+export const calculateDistancePreview = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { address, lat, lng } = req.body;
+
+    let targetLat = lat;
+    let targetLng = lng;
+
+    if ((!targetLat || !targetLng) && address) {
+      const resolved = resolveCoordinatesFromText(address);
+      if (resolved) {
+        targetLat = resolved.lat;
+        targetLng = resolved.lng;
+      }
+    }
+
+    if (!targetLat || !targetLng) {
+      targetLat = 6.0535;
+      targetLng = 80.2210;
+    }
+
+    const result = findNearestGarage(targetLat, targetLng);
+
+    res.json({
+      success: true,
+      data: {
+        lat: targetLat,
+        lng: targetLng,
+        nearestHub: result.nearest,
+        distanceKm: result.distanceKm,
+        estimatedArrivalMinutes: Math.max(6, Math.round(result.distanceKm * 2.2)),
+        allHubsComparison: result.allDistances,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

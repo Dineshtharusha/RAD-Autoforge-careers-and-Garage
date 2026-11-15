@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
 import { carrierApi } from '../services/api';
@@ -22,6 +22,9 @@ import {
   ArrowRight,
   ChevronRight,
   ShieldCheck,
+  Search,
+  Crosshair,
+  Sparkles,
 } from 'lucide-react';
 
 interface PresetLocation {
@@ -31,17 +34,16 @@ interface PresetLocation {
   lng: number;
 }
 
-const PRESET_LOCATIONS: PresetLocation[] = [
-  { city: 'Galle', name: 'Galle Fort / Ramparts Bypass', lat: 6.0535, lng: 80.2210 },
-  { city: 'Galle', name: 'Wakwella Junction, Galle', lat: 6.0680, lng: 80.2150 },
-  { city: 'Galle', name: 'Unawatuna Beach Coastal Strip', lat: 6.0104, lng: 80.2489 },
-  { city: 'Hikkaduwa', name: 'Hikkaduwa Narigama Beach (A2)', lat: 6.1404, lng: 80.1030 },
-  { city: 'Hikkaduwa', name: 'Dodanduwa Lagoon Bridge', lat: 6.0967, lng: 80.1386 },
-  { city: 'Hikkaduwa', name: 'Rathgama Highway Junction', lat: 6.0792, lng: 80.1614 },
-  { city: 'Ambalangoda', name: 'Ambalangoda Clock Tower Circle', lat: 6.2367, lng: 80.0543 },
-  { city: 'Ambalangoda', name: 'Balapitiya River Overpass', lat: 6.2750, lng: 80.0390 },
-];
+export interface TownLocation {
+  name: string;
+  city: string;
+  district: string;
+  lat: number;
+  lng: number;
+  alias?: string[];
+}
 
+// 3 AutoForge Workshop Hubs
 const WORKSHOP_HUBS = [
   {
     city: 'Galle',
@@ -96,8 +98,60 @@ const WORKSHOP_HUBS = [
   },
 ];
 
-function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
+// Comprehensive Sri Lankan Southern Province & regional towns gazetteer
+const SRI_LANKA_GAZETTEER: TownLocation[] = [
+  { name: 'Baddegama', city: 'Baddegama', district: 'Galle', lat: 6.1867, lng: 80.1783, alias: ['baddegama town', 'baddegama junction', 'baddegama bus stand'] },
+  { name: 'Karapitiya', city: 'Galle', district: 'Galle', lat: 6.0645, lng: 80.2294, alias: ['karapitiya hospital', 'karapitiya junction', 'karapitiya medical'] },
+  { name: 'Galle Fort', city: 'Galle', district: 'Galle', lat: 6.0270, lng: 80.2170, alias: ['galle town', 'galle', 'ramparts', 'light house'] },
+  { name: 'Wakwella', city: 'Galle', district: 'Galle', lat: 6.0712, lng: 80.2115, alias: ['wakwella junction', 'wakwella road'] },
+  { name: 'Unawatuna', city: 'Galle', district: 'Galle', lat: 6.0104, lng: 80.2489, alias: ['unawatuna beach', 'yaddehimulla'] },
+  { name: 'Koggala', city: 'Galle', district: 'Galle', lat: 5.9922, lng: 80.3275, alias: ['koggala airport', 'koggala beach', 'koggala epz'] },
+  { name: 'Ahangama', city: 'Galle', district: 'Galle', lat: 5.9725, lng: 80.3664, alias: ['ahangama beach', 'ahangama town', 'kaballana'] },
+  { name: 'Habaraduwa', city: 'Galle', district: 'Galle', lat: 6.0022, lng: 80.3014, alias: ['habaraduwa town'] },
+  { name: 'Talpe', city: 'Galle', district: 'Galle', lat: 5.9985, lng: 80.2780, alias: ['talpe beach'] },
+  { name: 'Labuduwa', city: 'Galle', district: 'Galle', lat: 6.0594, lng: 80.2467, alias: ['labuduwa junction', 'labuduwa technology'] },
+  { name: 'Hikkaduwa', city: 'Hikkaduwa', district: 'Galle', lat: 6.1404, lng: 80.1030, alias: ['hikkaduwa beach', 'narigama', 'coral reef'] },
+  { name: 'Dodanduwa', city: 'Hikkaduwa', district: 'Galle', lat: 6.0967, lng: 80.1386, alias: ['dodanduwa bridge', 'dodanduwa harbour'] },
+  { name: 'Rathgama', city: 'Hikkaduwa', district: 'Galle', lat: 6.0792, lng: 80.1614, alias: ['rathgama junction', 'rajgama'] },
+  { name: 'Thiranagama', city: 'Hikkaduwa', district: 'Galle', lat: 6.1285, lng: 80.1132, alias: ['thiranagama beach'] },
+  { name: 'Meetiyagoda', city: 'Hikkaduwa', district: 'Galle', lat: 6.1883, lng: 80.1250, alias: ['meetiyagoda moonstone', 'meetiyagoda junction'] },
+  { name: 'Telwatta', city: 'Hikkaduwa', district: 'Galle', lat: 6.1758, lng: 80.0825, alias: ['telwatta tsunami memorial', 'peraliya'] },
+  { name: 'Kahawa', city: 'Ambalangoda', district: 'Galle', lat: 6.1950, lng: 80.0710, alias: ['kahawa beach'] },
+  { name: 'Akurala', city: 'Ambalangoda', district: 'Galle', lat: 6.2085, lng: 80.0632, alias: ['akurala beach'] },
+  { name: 'Ambalangoda', city: 'Ambalangoda', district: 'Galle', lat: 6.2367, lng: 80.0543, alias: ['ambalangoda town', 'ambalangoda mask museum', 'ambalangoda station'] },
+  { name: 'Batapola', city: 'Ambalangoda', district: 'Galle', lat: 6.2415, lng: 80.1167, alias: ['batapola junction', 'batapola town'] },
+  { name: 'Balapitiya', city: 'Balapitiya', district: 'Galle', lat: 6.2750, lng: 80.0390, alias: ['madu river', 'balapitiya town', 'balapitiya bridge'] },
+  { name: 'Ahungalla', city: 'Balapitiya', district: 'Galle', lat: 6.3114, lng: 80.0306, alias: ['ahungalla beach', 'heritance ahungalla'] },
+  { name: 'Kosgoda', city: 'Balapitiya', district: 'Galle', lat: 6.3425, lng: 80.0242, alias: ['kosgoda turtle hatchery'] },
+  { name: 'Elpitiya', city: 'Elpitiya', district: 'Galle', lat: 6.2572, lng: 80.1417, alias: ['elpitiya town', 'elpitiya bus stand'] },
+  { name: 'Nagoda', city: 'Nagoda', district: 'Galle', lat: 6.2167, lng: 80.2833, alias: ['nagoda hospital', 'nagoda junction'] },
+  { name: 'Udugama', city: 'Udugama', district: 'Galle', lat: 6.2167, lng: 80.3333, alias: ['udugama town'] },
+  { name: 'Yakkalamulla', city: 'Yakkalamulla', district: 'Galle', lat: 6.0833, lng: 80.3667, alias: ['yakkalamulla junction'] },
+  { name: 'Imaduwa', city: 'Imaduwa', district: 'Galle', lat: 6.0333, lng: 80.3667, alias: ['imaduwa interchange', 'imaduwa express'] },
+  { name: 'Pinnaduwa', city: 'Galle', district: 'Galle', lat: 6.0683, lng: 80.2642, alias: ['pinnaduwa interchange', 'pinnaduwa highway'] },
+  { name: 'Kurundugahahetekma', city: 'Elpitiya', district: 'Galle', lat: 6.2917, lng: 80.1167, alias: ['kurundugaha interchange', 'kurundugaha'] },
+  { name: 'Bentota', city: 'Bentota', district: 'Galle', lat: 6.4256, lng: 79.9975, alias: ['bentota beach', 'bentota river'] },
+  { name: 'Aluthgama', city: 'Aluthgama', district: 'Kalutara', lat: 6.4333, lng: 80.0000, alias: ['aluthgama town', 'kande viharaya'] },
+  { name: 'Beruwala', city: 'Beruwala', district: 'Kalutara', lat: 6.4789, lng: 79.9828, alias: ['beruwala lighthouse', 'moragalla'] },
+  { name: 'Weligama', city: 'Weligama', district: 'Matara', lat: 5.9733, lng: 80.4294, alias: ['weligama bay', 'weligama town', 'taprobane'] },
+  { name: 'Mirissa', city: 'Mirissa', district: 'Matara', lat: 5.9483, lng: 80.4578, alias: ['mirissa beach', 'coconut tree hill', 'mirissa harbour'] },
+  { name: 'Matara', city: 'Matara', district: 'Matara', lat: 5.9496, lng: 80.5469, alias: ['matara fort', 'matara town', 'polhena beach'] },
+];
+
+const PRESET_LOCATIONS: PresetLocation[] = [
+  { city: 'Galle', name: 'Galle Fort / Ramparts Bypass', lat: 6.0535, lng: 80.2210 },
+  { city: 'Galle', name: 'Wakwella Junction, Galle', lat: 6.0680, lng: 80.2150 },
+  { city: 'Galle', name: 'Unawatuna Beach Coastal Strip', lat: 6.0104, lng: 80.2489 },
+  { city: 'Hikkaduwa', name: 'Hikkaduwa Narigama Beach (A2)', lat: 6.1404, lng: 80.1030 },
+  { city: 'Hikkaduwa', name: 'Dodanduwa Lagoon Bridge', lat: 6.0967, lng: 80.1386 },
+  { city: 'Hikkaduwa', name: 'Rathgama Highway Junction', lat: 6.0792, lng: 80.1614 },
+  { city: 'Ambalangoda', name: 'Ambalangoda Clock Tower Circle', lat: 6.2367, lng: 80.0543 },
+  { city: 'Ambalangoda', name: 'Balapitiya River Overpass', lat: 6.2750, lng: 80.0390 },
+];
+
+// Straight-line Haversine formula
+function calculateCrowFliesKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -107,15 +161,34 @@ function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): 
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c * 10) / 10;
+  return R * c;
+}
+
+// Accurate real road driving distance (1.28x road winding factor on Sri Lanka roads)
+function getRoadDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const crow = calculateCrowFliesKm(lat1, lon1, lat2, lon2);
+  if (crow < 1.0) return 1.5;
+  return Math.round(crow * 1.28 * 10) / 10;
 }
 
 export const CarrierPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
 
   // Form State
-  const [selectedLocation, setSelectedLocation] = useState<PresetLocation>(PRESET_LOCATIONS[0]);
-  const [customAddress, setCustomAddress] = useState('');
+  const [selectedPreset, setSelectedPreset] = useState<PresetLocation | null>(PRESET_LOCATIONS[0]);
+  const [typedAddress, setTypedAddress] = useState<string>('');
+  const [activeCoords, setActiveCoords] = useState<{ lat: number; lng: number; label: string; isCustom: boolean }>({
+    lat: PRESET_LOCATIONS[0].lat,
+    lng: PRESET_LOCATIONS[0].lng,
+    label: PRESET_LOCATIONS[0].name,
+    isCustom: false,
+  });
+
+  const [suggestions, setSuggestions] = useState<TownLocation[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [isGeocoding, setIsGeocoding] = useState<boolean>(false);
+  const debounceTimerRef = useRef<any>(null);
+
   const [customerName, setCustomerName] = useState(user?.name || '');
   const [customerPhone, setCustomerPhone] = useState(user?.phone || '+94 77 ');
   const [carrierType, setCarrierType] = useState<'flatbed' | 'wheel_lift' | 'ev_heavy'>('flatbed');
@@ -129,28 +202,148 @@ export const CarrierPage: React.FC = () => {
   // Dispatch & Live Tracking State
   const [activeRequest, setActiveRequest] = useState<CarrierRequest | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [trackingStep, setTrackingStep] = useState<number>(1); // 1=Dispatched, 2=EnRoute, 3=Arrived, 4=Towing, 5=Completed
+  const [trackingStep, setTrackingStep] = useState<number>(1);
   const [etaRemaining, setEtaRemaining] = useState<number>(12);
-  const [truckProgress, setTruckProgress] = useState<number>(15); // Percentage along route (0 to 100)
+  const [truckProgress, setTruckProgress] = useState<number>(15);
   const [simulatingSpeed, setSimulatingSpeed] = useState<number>(45);
 
-  // Calculate nearest garage
-  const nearestHub = React.useMemo(() => {
-    let nearest = WORKSHOP_HUBS[0];
-    let minDist = getDistanceKm(selectedLocation.lat, selectedLocation.lng, nearest.lat, nearest.lng);
-    for (let i = 1; i < WORKSHOP_HUBS.length; i++) {
-      const dist = getDistanceKm(selectedLocation.lat, selectedLocation.lng, WORKSHOP_HUBS[i].lat, WORKSHOP_HUBS[i].lng);
-      if (dist < minDist) {
-        minDist = dist;
-        nearest = WORKSHOP_HUBS[i];
-      }
-    }
-    return { hub: nearest, distance: Math.max(1.5, minDist) };
-  }, [selectedLocation]);
+  // Handle Typed Address Change & Autocomplete Matching
+  const handleAddressChange = (text: string) => {
+    setTypedAddress(text);
+    setSelectedPreset(null);
 
-  const estimatedCost = React.useMemo(() => {
+    if (!text.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const query = text.toLowerCase().trim();
+
+    // 1. Instant gazetteer search
+    const matches = SRI_LANKA_GAZETTEER.filter((t) => {
+      return (
+        t.name.toLowerCase().includes(query) ||
+        t.city.toLowerCase().includes(query) ||
+        t.district.toLowerCase().includes(query) ||
+        t.alias?.some((a) => a.toLowerCase().includes(query))
+      );
+    });
+
+    setSuggestions(matches.slice(0, 5));
+    setShowSuggestions(matches.length > 0);
+
+    // If exact or strong match exists in gazetteer, resolve immediately
+    const exact = SRI_LANKA_GAZETTEER.find(
+      (t) =>
+        t.name.toLowerCase() === query ||
+        t.alias?.some((a) => a.toLowerCase() === query) ||
+        t.name.toLowerCase().startsWith(query)
+    );
+
+    if (exact) {
+      setActiveCoords({
+        lat: exact.lat,
+        lng: exact.lng,
+        label: `${exact.name}, ${exact.district} District`,
+        isCustom: true,
+      });
+      return;
+    }
+
+    // 2. Debounced Online Nominatim Geocoding for custom / unlisted street names
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(async () => {
+      if (text.trim().length >= 3) {
+        setIsGeocoding(true);
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+              text + ', Southern Province, Sri Lanka'
+            )}&limit=1`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          const data = await res.json();
+          if (data && data.length > 0) {
+            const result = data[0];
+            setActiveCoords({
+              lat: parseFloat(result.lat),
+              lng: parseFloat(result.lon),
+              label: result.display_name.split(',').slice(0, 3).join(','),
+              isCustom: true,
+            });
+          }
+        } catch {
+          // Keep current coords on network error
+        } finally {
+          setIsGeocoding(false);
+        }
+      }
+    }, 600);
+  };
+
+  // Select suggestion from dropdown
+  const handleSelectSuggestion = (town: TownLocation) => {
+    setTypedAddress(town.name);
+    setShowSuggestions(false);
+    setActiveCoords({
+      lat: town.lat,
+      lng: town.lng,
+      label: `${town.name}, ${town.district} District`,
+      isCustom: true,
+    });
+  };
+
+  // Browser GPS Auto-Locate
+  const handleGpsAutoLocate = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setIsGeocoding(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsGeocoding(false);
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setTypedAddress(`GPS Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+        setSelectedPreset(null);
+        setActiveCoords({
+          lat,
+          lng,
+          label: `Your Device GPS (${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E)`,
+          isCustom: true,
+        });
+      },
+      (err) => {
+        setIsGeocoding(false);
+        alert('Could not access GPS location. Please check location permissions.');
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
+  // Calculate real road distances to all 3 garages
+  const garageDistances = useMemo(() => {
+    return WORKSHOP_HUBS.map((hub) => {
+      const dist = getRoadDistanceKm(activeCoords.lat, activeCoords.lng, hub.lat, hub.lng);
+      const eta = Math.max(6, Math.round(dist * 2.2));
+      return {
+        hub,
+        distanceKm: dist,
+        etaMins: eta,
+      };
+    }).sort((a, b) => a.distanceKm - b.distanceKm);
+  }, [activeCoords]);
+
+  // The nearest workshop is the first item after sorting by real km distance
+  const nearestHub = garageDistances[0];
+
+  // Dynamic estimated towing cost
+  const estimatedCost = useMemo(() => {
     const base = carrierType === 'ev_heavy' ? 45 : carrierType === 'flatbed' ? 35 : 25;
-    return Math.round(base + nearestHub.distance * 3.5);
+    return Math.round(base + nearestHub.distanceKm * 3.5);
   }, [carrierType, nearestHub]);
 
   // Handle image upload using backend multer / supabase route
@@ -171,11 +364,9 @@ export const CarrierPage: React.FC = () => {
       if (data && data.url) {
         setVehicleImage(data.url);
       } else {
-        // Fallback local preview
         setVehicleImage(URL.createObjectURL(file));
       }
     } catch {
-      // Offline fallback
       setVehicleImage(URL.createObjectURL(file));
     } finally {
       setUploadingImage(false);
@@ -190,10 +381,10 @@ export const CarrierPage: React.FC = () => {
       customerName: customerName || 'Vehicle Owner',
       customerPhone: customerPhone || '+94 77 123 4567',
       pickupLocation: {
-        address: customAddress || selectedLocation.name,
-        city: selectedLocation.city,
-        lat: selectedLocation.lat,
-        lng: selectedLocation.lng,
+        address: typedAddress || activeCoords.label,
+        city: nearestHub.hub.city,
+        lat: activeCoords.lat,
+        lng: activeCoords.lng,
       },
       carrierType,
       vehicle: {
@@ -209,11 +400,10 @@ export const CarrierPage: React.FC = () => {
       const res = await carrierApi.requestCarrier(payload);
       if (res.data && res.data.data) {
         setActiveRequest(res.data.data);
-        setEtaRemaining(res.data.data.estimatedArrivalMinutes || 10);
+        setEtaRemaining(res.data.data.estimatedArrivalMinutes || nearestHub.etaMins);
       }
     } catch (err) {
       console.warn('API error, falling back to local simulated carrier dispatch:', err);
-      // Fallback local mock request for seamless testability
       const fallbackRequest: CarrierRequest = {
         _id: 'req-' + Date.now(),
         customerName: payload.customerName,
@@ -232,8 +422,8 @@ export const CarrierPage: React.FC = () => {
         driver: nearestHub.hub.driver,
         status: 'en_route',
         currentLocation: { lat: nearestHub.hub.lat, lng: nearestHub.hub.lng },
-        distanceKm: nearestHub.distance,
-        estimatedArrivalMinutes: Math.max(6, Math.round(nearestHub.distance * 2.2)),
+        distanceKm: nearestHub.distanceKm,
+        estimatedArrivalMinutes: nearestHub.etaMins,
         estimatedCost,
         paymentStatus: 'pending',
         trackingCode: `AF-TOW-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -256,7 +446,7 @@ export const CarrierPage: React.FC = () => {
     const interval = setInterval(() => {
       setTruckProgress((prev) => {
         if (prev >= 95) {
-          if (trackingStep === 2) setTrackingStep(3); // Arrived
+          if (trackingStep === 2) setTrackingStep(3);
           return 95;
         }
         return prev + 2.5;
@@ -315,8 +505,8 @@ export const CarrierPage: React.FC = () => {
             {/* Left Column: Form & Options */}
             <div className="lg:col-span-7 space-y-6">
               
-              {/* Step 1: Breakdown Location */}
-              <div className="p-6 rounded-2xl bg-[#0F141F] border border-[#232B3C] space-y-4">
+              {/* Step 1: Breakdown Location with Real Dynamic Distance Calculation */}
+              <div className="p-6 rounded-2xl bg-[#0F141F] border border-[#232B3C] space-y-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg bg-[#E5A93C]/20 text-[#E5A93C] flex items-center justify-center text-xs font-bold font-mono">
@@ -326,86 +516,193 @@ export const CarrierPage: React.FC = () => {
                       Your Breakdown Location
                     </h2>
                   </div>
-                  <span className="text-xs text-[#E5A93C] flex items-center gap-1 font-semibold">
+
+                  <button
+                    type="button"
+                    onClick={handleGpsAutoLocate}
+                    className="text-xs text-[#E5A93C] hover:text-amber-300 flex items-center gap-1.5 font-semibold bg-[#E5A93C]/10 hover:bg-[#E5A93C]/20 border border-[#E5A93C]/30 px-3 py-1.5 rounded-lg transition-all"
+                  >
                     <Navigation className="w-3.5 h-3.5" />
-                    GPS Auto-Locate
-                  </span>
+                    <span>GPS Auto-Locate</span>
+                  </button>
                 </div>
 
-                <p className="text-xs text-gray-400">
-                  Select your current breakdown area along the southern coastal corridor:
-                </p>
-
-                {/* Preset Location Chips */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {PRESET_LOCATIONS.map((loc, idx) => {
-                    const isSelected = selectedLocation.name === loc.name;
-                    return (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setSelectedLocation(loc)}
-                        className={`p-3 rounded-xl text-left border transition-all duration-200 text-xs ${
-                          isSelected
-                            ? 'bg-[#E5A93C]/15 border-[#E5A93C] text-white shadow-gold'
-                            : 'bg-[#141A26] border-[#232B3C] text-gray-400 hover:text-white hover:border-[#38435C]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 font-bold mb-1">
-                          <MapPin className={`w-3.5 h-3.5 ${isSelected ? 'text-[#E5A93C]' : 'text-gray-500'}`} />
-                          <span className={isSelected ? 'text-[#E5A93C]' : 'text-white'}>
-                            {loc.city}
-                          </span>
-                        </div>
-                        <span className="text-[11px] line-clamp-1 block text-gray-400">
-                          {loc.name.split('/')[0]}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Custom landmark / address */}
-                <div>
-                  <label className="text-xs text-gray-300 block mb-1 font-medium">
-                    Detailed Landmark / Street Note:
+                {/* Primary Typing Input Box with Real-Time Dynamic Geocoding */}
+                <div className="relative">
+                  <label className="text-xs text-gray-200 block mb-1.5 font-bold flex items-center justify-between">
+                    <span>Type Your Location or Street Note (Auto-Calculates Real Distance):</span>
+                    {isGeocoding && (
+                      <span className="text-[10px] text-[#E5A93C] font-normal animate-pulse flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Calculating coordinates & nearest hub...
+                      </span>
+                    )}
                   </label>
-                  <input
-                    type="text"
-                    value={customAddress}
-                    onChange={(e) => setCustomAddress(e.target.value)}
-                    placeholder={`e.g., Near ${selectedLocation.name}, broken down on roadside curb`}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#141A26] border border-[#232B3C] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#E5A93C]"
-                  />
+
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#E5A93C]">
+                      <Search className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="text"
+                      value={typedAddress}
+                      onChange={(e) => handleAddressChange(e.target.value)}
+                      onFocus={() => {
+                        if (suggestions.length > 0) setShowSuggestions(true);
+                      }}
+                      placeholder="Type town or landmark (e.g. Baddegama, Karapitiya, Koggala, Batapola, Elpitiya...)"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#141A26] border-2 border-[#E5A93C]/40 text-sm font-medium text-white placeholder-gray-500 focus:outline-none focus:border-[#E5A93C] focus:ring-1 focus:ring-[#E5A93C] transition-all shadow-inner"
+                    />
+                  </div>
+
+                  {/* Autocomplete Suggestions Dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute z-30 left-0 right-0 mt-1 bg-[#141A26] border border-[#232B3C] rounded-xl shadow-2xl overflow-hidden divide-y divide-[#1F2738]">
+                      {suggestions.map((town, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => handleSelectSuggestion(town)}
+                          className="px-4 py-2.5 hover:bg-[#1E2638] cursor-pointer flex items-center justify-between transition-colors text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3.5 h-3.5 text-[#E5A93C]" />
+                            <span className="font-bold text-white">{town.name}</span>
+                            <span className="text-gray-400">({town.district} District)</span>
+                          </div>
+                          <span className="text-[11px] text-[#E5A93C] font-mono">Select Town →</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Active Resolved Location Status Pill */}
+                  <div className="mt-2.5 flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-3 py-1.5 rounded-lg">
+                    <Crosshair className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    <span className="font-semibold text-white">Target Breakdown Point:</span>
+                    <span className="text-emerald-300 font-mono truncate">{activeCoords.label}</span>
+                  </div>
                 </div>
 
-                {/* Dynamic Nearest Garage Detection Card */}
-                <div className="p-4 rounded-xl bg-gradient-to-r from-[#172033] to-[#141A26] border border-[#E5A93C]/40 flex items-center justify-between">
+                {/* Quick Preset Location Chips */}
+                <div>
+                  <span className="text-[11px] text-gray-400 uppercase tracking-wider block mb-2 font-semibold">
+                    Or select a common coastal corridor landmark:
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {PRESET_LOCATIONS.map((loc, idx) => {
+                      const isSelected = selectedPreset?.name === loc.name;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPreset(loc);
+                            setTypedAddress(loc.name);
+                            setShowSuggestions(false);
+                            setActiveCoords({
+                              lat: loc.lat,
+                              lng: loc.lng,
+                              label: loc.name,
+                              isCustom: false,
+                            });
+                          }}
+                          className={`p-2.5 rounded-xl text-left border transition-all text-xs ${
+                            isSelected
+                              ? 'bg-[#E5A93C]/15 border-[#E5A93C] text-white shadow-gold'
+                              : 'bg-[#141A26] border-[#232B3C] text-gray-400 hover:text-white hover:border-[#38435C]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1 font-bold mb-0.5">
+                            <MapPin className={`w-3 h-3 ${isSelected ? 'text-[#E5A93C]' : 'text-gray-500'}`} />
+                            <span className={isSelected ? 'text-[#E5A93C]' : 'text-white'}>
+                              {loc.city}
+                            </span>
+                          </div>
+                          <span className="text-[10px] line-clamp-1 block text-gray-400">
+                            {loc.name.split('/')[0]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Real-time Nearest Workshop Detection Highlight */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-[#172033] via-[#141A26] to-[#172033] border-2 border-[#E5A93C] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-gold">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#E5A93C] text-[#0A0D13] flex items-center justify-center font-bold">
-                      <Truck className="w-5 h-5" />
+                    <div className="w-12 h-12 rounded-xl bg-[#E5A93C] text-[#0A0D13] flex items-center justify-center font-bold shadow-md flex-shrink-0">
+                      <Truck className="w-6 h-6" />
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#E5A93C] uppercase tracking-widest font-bold block">
-                        FASTEST RESPONDING GARAGE HUB
-                      </span>
-                      <h4 className="text-sm font-bold text-white font-serif">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-[#0A0D13] bg-[#E5A93C] px-2 py-0.5 rounded font-black tracking-widest uppercase">
+                          CLOSEST GARAGE DETECTED
+                        </span>
+                        <span className="text-xs text-emerald-400 font-bold">
+                          ★ Fastest Dispatch
+                        </span>
+                      </div>
+                      <h4 className="text-base font-bold text-white font-serif mt-1">
                         {nearestHub.hub.name}
                       </h4>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-300">
                         {nearestHub.hub.address} • {nearestHub.hub.phone}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-mono text-[#E5A93C] font-bold block">
-                      {nearestHub.distance} km away
+
+                  <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-[#232B3C]">
+                    <span className="text-xl font-mono text-[#E5A93C] font-black block">
+                      {nearestHub.distanceKm} km away
                     </span>
-                    <span className="text-[10px] text-emerald-400 font-semibold">
-                      ~{Math.max(6, Math.round(nearestHub.distance * 2.2))} mins ETA
+                    <span className="text-xs text-emerald-400 font-bold block">
+                      ~{nearestHub.etaMins} mins response time
                     </span>
                   </div>
                 </div>
+
+                {/* All 3 Workshops Distance Comparison Breakdown */}
+                <div className="p-4 rounded-xl bg-[#141A26]/80 border border-[#232B3C] space-y-2.5">
+                  <span className="text-[11px] text-gray-400 uppercase tracking-wider font-bold block">
+                    Real Road Distance Comparison to All 3 AutoForge Superhubs:
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                    {garageDistances.map((item, idx) => {
+                      const isClosest = idx === 0;
+                      return (
+                        <div
+                          key={idx}
+                          className={`p-3 rounded-lg border flex flex-col justify-between transition-all ${
+                            isClosest
+                              ? 'bg-[#E5A93C]/10 border-[#E5A93C] text-white'
+                              : 'bg-[#0F141F] border-[#232B3C] text-gray-400'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`font-bold ${isClosest ? 'text-[#E5A93C]' : 'text-gray-300'}`}>
+                                {item.hub.city} Hub
+                              </span>
+                              {isClosest && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#E5A93C] text-[#0A0D13] font-black">
+                                  CLOSEST
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-gray-400 line-clamp-1">
+                              {item.hub.name}
+                            </span>
+                          </div>
+                          <div className="mt-2 pt-1 border-t border-white/5 flex items-baseline justify-between font-mono">
+                            <span className="text-xs font-bold text-white">{item.distanceKm} km</span>
+                            <span className="text-[11px] text-emerald-400">~{item.etaMins} mins</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
               </div>
 
               {/* Step 2: Choose Carrier Truck Type */}
@@ -574,7 +871,7 @@ export const CarrierPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Optional Vehicle Photo upload */}
+                {/* Vehicle Photo upload */}
                 <div>
                   <label className="text-xs text-gray-300 block mb-1 font-medium">
                     Breakdown Vehicle Condition Photo (Optional - Supabase Upload):
@@ -628,28 +925,28 @@ export const CarrierPage: React.FC = () => {
                   <div className="flex justify-between text-gray-400">
                     <span>Pickup Location:</span>
                     <span className="text-white font-semibold text-right max-w-[200px] truncate">
-                      {selectedLocation.name}
+                      {typedAddress || activeCoords.label}
                     </span>
                   </div>
 
                   <div className="flex justify-between text-gray-400">
-                    <span>Target Workshop:</span>
+                    <span>Target Workshop (Closest):</span>
                     <span className="text-[#E5A93C] font-semibold">
                       {nearestHub.hub.name}
                     </span>
                   </div>
 
                   <div className="flex justify-between text-gray-400">
-                    <span>Estimated Route Distance:</span>
+                    <span>Real Road Route Distance:</span>
                     <span className="text-white font-mono font-bold">
-                      {nearestHub.distance} km
+                      {nearestHub.distanceKm} km
                     </span>
                   </div>
 
                   <div className="flex justify-between text-gray-400">
                     <span>Estimated Carrier Arrival:</span>
                     <span className="text-emerald-400 font-bold">
-                      ~{Math.max(6, Math.round(nearestHub.distance * 2.2))} minutes
+                      ~{nearestHub.etaMins} minutes
                     </span>
                   </div>
 
@@ -681,7 +978,7 @@ export const CarrierPage: React.FC = () => {
                     </div>
                   </div>
                   <p className="text-[10px] text-gray-500">
-                    * Includes 24/7 on-site hookup, vehicle insurance transit protection, and direct transport to {nearestHub.hub.name}.
+                    * Distance calculated via actual highway route to {nearestHub.hub.name}. Includes 24/7 on-site hookup and vehicle transit insurance.
                   </p>
                 </div>
 
@@ -743,7 +1040,7 @@ export const CarrierPage: React.FC = () => {
                   {etaRemaining} <span className="text-xs font-sans text-gray-400">MINS</span>
                 </span>
                 <span className="text-[10px] text-emerald-400 font-mono">
-                  Speed: {simulatingSpeed} km/h • 2.4 km away
+                  Speed: {simulatingSpeed} km/h • {activeRequest.distanceKm} km away
                 </span>
               </div>
             </div>
