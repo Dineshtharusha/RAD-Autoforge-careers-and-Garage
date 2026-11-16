@@ -484,32 +484,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
-            {/* Quick Demo Credential Pills (login only) */}
-            {mode === 'login' && (
-              <div className="pt-1 flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('admin@autoforge.com');
-                    setPassword('adminpassword123');
-                  }}
-                  className="text-[10px] text-amber-300/80 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30"
-                >
-                  Demo Admin Auto-fill
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('alexander@autoforge.com');
-                    setPassword('customerpassword123');
-                  }}
-                  className="text-[10px] text-gray-300 bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded border border-white/10"
-                >
-                  Demo Client Auto-fill
-                </button>
-              </div>
-            )}
-
             {/* Action Submit Button */}
             <button
               type="submit"
