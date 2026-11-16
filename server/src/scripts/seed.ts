@@ -1,11 +1,15 @@
+import dns from 'dns';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 import { User } from '../models/User';
 import { Service } from '../models/Service';
 import { Workshop } from '../models/Workshop';
 import { Job } from '../models/Job';
 import { Booking } from '../models/Booking';
 import { Application } from '../models/Application';
+import { CarrierLorry } from '../models/CarrierLorry';
 
 dotenv.config();
 
@@ -22,6 +26,7 @@ const seedData = async () => {
     await Job.deleteMany({});
     await Booking.deleteMany({});
     await Application.deleteMany({});
+    await CarrierLorry.deleteMany({});
 
     console.log('[AutoForge Seeder] Cleared previous records.');
 
@@ -349,6 +354,54 @@ const seedData = async () => {
     });
 
     console.log('[AutoForge Seeder] Seeded sample career application.');
+
+    // 7. Seed Carrier Lorry Fleet
+    await CarrierLorry.insertMany([
+      {
+        truckPlate: 'SP LY-4109',
+        truckModel: 'Isuzu Forward F-Series Flatbed Carrier',
+        carrierType: 'flatbed',
+        assignedHub: 'Galle',
+        driverName: 'Chaminda Silva',
+        driverPhone: '+94 77 123 4800',
+        driverPhoto: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80',
+        rating: 4.96,
+        status: 'available',
+        completedRescues: 142,
+        maxTowingCapacityKg: 5000,
+        equippedFeatures: ['Hydraulic Tilt Bed', 'Heavy Electric Winch', 'Wheel Straps & Chocks'],
+      },
+      {
+        truckPlate: 'SP ND-8201',
+        truckModel: 'Mitsubishi Fuso Canter Rapid Tow Recovery',
+        carrierType: 'wheel_lift',
+        assignedHub: 'Hikkaduwa',
+        driverName: 'Dilan Ranasinghe',
+        driverPhone: '+94 71 884 9210',
+        driverPhoto: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+        rating: 4.88,
+        status: 'available',
+        completedRescues: 86,
+        maxTowingCapacityKg: 3500,
+        equippedFeatures: ['Under-lift Hydraulic Boom', 'Motorcycle Recovery Cradle', 'Rapid Clearance Hitch'],
+      },
+      {
+        truckPlate: 'SP PJ-9944',
+        truckModel: 'Hino 500 Heavy-Duty EV & SUV Carrier',
+        carrierType: 'ev_heavy',
+        assignedHub: 'Ambalangoda',
+        driverName: 'Kasun Gunasekara',
+        driverPhone: '+94 76 550 1198',
+        driverPhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80',
+        rating: 4.94,
+        status: 'available',
+        completedRescues: 98,
+        maxTowingCapacityKg: 7500,
+        equippedFeatures: ['High-Voltage Insulated Bed', 'EV Battery Isolation Kit', 'Heavy Rotator Boom'],
+      },
+    ]);
+    console.log('[AutoForge Seeder] Seeded carrier lorry fleet units.');
+
     console.log('[AutoForge Seeder] ALL SEED DATA POPULATED SUCCESSFULLY!');
 
     process.exit(0);

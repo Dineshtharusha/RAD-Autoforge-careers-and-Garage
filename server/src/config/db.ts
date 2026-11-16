@@ -1,4 +1,12 @@
+import dns from 'dns';
 import mongoose from 'mongoose';
+
+// Ensure SRV DNS resolution succeeds across all ISPs and local routers
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch {
+  // Ignore if not allowed
+}
 
 export const connectDB = async (): Promise<void> => {
   try {
