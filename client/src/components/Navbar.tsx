@@ -145,15 +145,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="relative">
                 <button
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className={`flex items-center gap-2 p-1.5 rounded-full border transition-colors ${
-                    isAdmin ? 'border-red-500 hover:border-red-400' : 'border-[#2C2B29] hover:border-[#E5A93C]'
+                  className={`flex items-center justify-center w-10 h-10 rounded-full border transition-colors shadow-sm ${
+                    isAdmin
+                      ? 'border-red-500/60 bg-red-500/10 text-red-400 hover:border-red-400'
+                      : 'border-[#E5A93C]/50 bg-[#141A26] text-[#E5A93C] hover:border-[#E5A93C] hover:shadow-gold'
                   }`}
+                  title={user.name}
                 >
-                  <img
-                    src={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
-                    alt={user.name}
-                    className={`w-8 h-8 rounded-full object-cover ring-1 ${isAdmin ? 'ring-red-400' : 'ring-[#E5A93C]/50'}`}
-                  />
+                  <UserIcon className="w-4 h-4" />
                 </button>
 
                 {profileDropdownOpen && (
