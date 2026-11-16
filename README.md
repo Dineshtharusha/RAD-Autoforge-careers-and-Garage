@@ -5,8 +5,9 @@
 **Graduate Diploma in Software Engineering (GDSE)**  
 **Student Name:** Dinesh Tharusha  
 **Repository:** [https://github.com/Dineshtharusha/RAD-Autoforge-careers-and-Garage](https://github.com/Dineshtharusha/RAD-Autoforge-careers-and-Garage)  
-**Live Deployed Frontend:** `https://autoforge-garage.vercel.app` *(or configured cloud host)*  
-**Live Deployed Backend:** `https://autoforge-api.onrender.com`  
+**Live Deployed Frontend (Vercel):** [https://rad-autoforge-careers-and-garage.vercel.app](https://rad-autoforge-careers-and-garage.vercel.app)  
+**Live Deployed Backend (Render):** [https://rad-autoforge-careers-and-garage.onrender.com](https://rad-autoforge-careers-and-garage.onrender.com)  
+**Database (MongoDB Atlas):** Cloud M0 Cluster (AWS Mumbai ap-south-1)  
 
 ---
 
