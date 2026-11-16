@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "AutoForge Careers & Garage - Full Stack MERN Application (TypeScript, Redux, TailwindCSS, JWT, MongoDB)",
   "scripts": {
+    "build": "npm run build:server",
+    "start": "cd server && npm start",
     "install:all": "npm run install:server && npm run install:client",
     "install:server": "cd server && npm install",
     "install:client": "cd client && npm install",
