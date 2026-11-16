@@ -239,3 +239,29 @@ export const carrierApi = {
   updateStatus: (id: string, update: any) => api.patch(`/carriers/${id}/status`, update),
 };
 
+export const serviceApi = {
+  getAll: () => api.get('/services'),
+  create: (data: any) => api.post('/services', data),
+  update: (id: string, data: any) => api.put(`/services/${id}`, data),
+  delete: (id: string) => api.delete(`/services/${id}`),
+};
+
+export const lorryApi = {
+  getAll: () => api.get('/carriers/lorries'),
+  create: (data: any) => api.post('/carriers/lorries', data),
+  update: (id: string, data: any) => api.put(`/carriers/lorries/${id}`, data),
+  delete: (id: string) => api.delete(`/carriers/lorries/${id}`),
+  getAllRequests: () => api.get('/carriers/all-requests'),
+};
+
+export const authApi = {
+  register: (data: any) => api.post('/auth/register', data),
+  login: (data: any) => api.post('/auth/login', data),
+  verifyEmail: (token: string) => api.post('/auth/verify-email', { token }),
+  resendVerification: (email: string) => api.post('/auth/resend-verification', { email }),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token: string, password: string) => api.post('/auth/reset-password', { token, password }),
+  getMe: () => api.get('/auth/me'),
+  updateProfile: (data: any) => api.put('/auth/me', data),
+};
+

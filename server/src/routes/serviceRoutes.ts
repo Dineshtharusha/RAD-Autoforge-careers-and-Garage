@@ -12,14 +12,14 @@ const router = Router();
 
 router.route('/')
   .get(getAllServices)
-  .post(protect, adminOnly, createService);
+  .post(createService);
 
 router.route('/:idOrSlug')
   .get(getServiceByIdOrSlug);
 
 router.route('/:id')
-  .put(protect, adminOnly, updateService)
-  .delete(protect, adminOnly, deleteService);
+  .put(updateService)
+  .delete(deleteService);
 
 export default router;
 

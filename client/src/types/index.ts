@@ -6,6 +6,7 @@ export interface User {
   phone?: string;
   avatar?: string;
   token?: string;
+  isEmailVerified?: boolean;
 }
 
 export interface Service {
@@ -163,6 +164,25 @@ export interface CarrierRequest {
   trackingCode: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CarrierLorry {
+  _id: string;
+  truckPlate: string;
+  truckModel: string;
+  carrierType: 'flatbed' | 'wheel_lift' | 'ev_heavy';
+  assignedHub: 'Galle' | 'Hikkaduwa' | 'Ambalangoda';
+  driverName: string;
+  driverPhone: string;
+  driverPhoto: string;
+  rating: number;
+  status: 'available' | 'on_call' | 'maintenance' | 'offline';
+  completedRescues: number;
+  maxTowingCapacityKg: number;
+  equippedFeatures: string[];
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { CarrierRequest } from '../models/CarrierRequest';
+import { CarrierLorry } from '../models/CarrierLorry';
 import { Workshop } from '../models/Workshop';
 
 // Garage Hub references in Southern Province
@@ -413,5 +414,202 @@ export const updateCarrierStatus = async (req: Request, res: Response): Promise<
       success: false,
       message: error.message || 'Error updating status',
     });
+  }
+};
+
+// ==========================================
+// CARRIER LORRY / FLEET MANAGEMENT (ADMIN)
+// ==========================================
+
+// @desc    Get all carrier lorries / trucks in fleet
+// @route   GET /api/carriers/lorries
+// @access  Public / Admin
+export const getCarrierFleetLorries = async (req: Request, res: Response): Promise<void> => {
+  try {
+    let lorries = await CarrierLorry.find().sort({ createdAt: -1 });
+
+    // Seed initial 3 lorries if database is currently empty
+    if (lorries.length === 0) {
+      const initialLorries: any[] = [
+        {
+          truckPlate: 'SP LY-4109',
+          truckModel: 'Isuzu Elf Hydraulic Flatbed Transporter',
+          carrierType: 'flatbed',
+          assignedHub: 'Galle',
+          driverName: 'Chaminda Silva',
+          driverPhone: '+94 77 123 4567',
+          driverPhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+          rating: 4.96,
+          status: 'available',
+          completedRescues: 142,
+          maxTowingCapacityKg: 4200,
+          equippedFeatures: ['Hydraulic Tilt Bed', 'Low-Clearance Ramps', 'Laser Winch', 'High-Vis Strobes'],
+        },
+        {
+          truckPlate: 'SP LZ-8821',
+          truckModel: 'Mitsubishi Fuso Rapid Breakdown Tow',
+          carrierType: 'wheel_lift',
+          assignedHub: 'Hikkaduwa',
+          driverName: 'Sunil Bandara',
+          driverPhone: '+94 71 889 2233',
+          driverPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+          rating: 4.98,
+          status: 'available',
+          completedRescues: 218,
+          maxTowingCapacityKg: 3500,
+          equippedFeatures: ['Rapid Underlift Boom', 'Dollies Skates', 'Dual Air Winch', 'Diagnostic Scanner'],
+        },
+        {
+          truckPlate: 'SP LW-9904',
+          truckModel: 'Hino 500 Heavy-Duty Recovery Unit',
+          carrierType: 'ev_heavy',
+          assignedHub: 'Ambalangoda',
+          driverName: 'Nalin Fernando',
+          driverPhone: '+94 76 554 1122',
+          driverPhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80',
+          rating: 4.94,
+          status: 'available',
+          completedRescues: 98,
+          maxTowingCapacityKg: 7500,
+          equippedFeatures: ['High-Voltage Insulated Bed', 'EV Battery Isolation Kit', 'Heavy Rotator Boom', 'All-Terrain 4WD'],
+        },
+      ];
+
+      lorries = await CarrierLorry.insertMany(initialLorries) as any;
+    }
+
+    res.json({
+      success: true,
+      count: lorries.length,
+      data: lorries,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Add new carrier lorry / truck
+// @route   POST /api/carriers/lorries
+// @access  Admin
+export const createCarrierLorry = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {
+      truckPlate,
+      truckModel,
+      carrierType,
+      assignedHub,
+      driverName,
+      driverPhone,
+      driverPhoto,
+      maxTowingCapacityKg,
+      equippedFeatures,
+      notes,
+    } = req.body;
+
+    if (!truckPlate || !truckModel || !driverName || !driverPhone || !assignedHub) {
+      res.status(400).json({
+        success: false,
+        message: 'Truck plate, model, assigned hub, driver name, and phone are required',
+      });
+      return;
+    }
+
+    const existing = await CarrierLorry.findOne({ truckPlate: truckPlate.trim().toUpperCase() });
+    if (existing) {
+      res.status(400).json({
+        success: false,
+        message: `Carrier lorry with plate ${truckPlate} already exists in fleet`,
+      });
+      return;
+    }
+
+    const lorry = await CarrierLorry.create({
+      truckPlate: truckPlate.trim().toUpperCase(),
+      truckModel,
+      carrierType: carrierType || 'flatbed',
+      assignedHub,
+      driverName,
+      driverPhone,
+      driverPhoto: driverPhoto || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+      rating: 4.95,
+      status: 'available',
+      completedRescues: 0,
+      maxTowingCapacityKg: Number(maxTowingCapacityKg) || 4000,
+      equippedFeatures: Array.isArray(equippedFeatures)
+        ? equippedFeatures
+        : typeof equippedFeatures === 'string'
+        ? equippedFeatures.split(',').map((s: string) => s.trim())
+        : ['Hydraulic Winch', 'Safety Strobes', 'Transit Tie-Downs'],
+      notes: notes || '',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Carrier Lorry added to AutoForge fleet successfully',
+      data: lorry,
+    });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update carrier lorry / status
+// @route   PUT /api/carriers/lorries/:id
+// @access  Admin
+export const updateCarrierLorry = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const lorry = await CarrierLorry.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!lorry) {
+      res.status(404).json({ success: false, message: 'Carrier lorry not found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: 'Carrier lorry details updated',
+      data: lorry,
+    });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete carrier lorry
+// @route   DELETE /api/carriers/lorries/:id
+// @access  Admin
+export const deleteCarrierLorry = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const lorry = await CarrierLorry.findByIdAndDelete(req.params.id);
+    if (!lorry) {
+      res.status(404).json({ success: false, message: 'Carrier lorry not found' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: 'Carrier lorry decommissioned from fleet',
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all carrier customer breakdown requests (for admin management)
+// @route   GET /api/carriers/all-requests
+// @access  Admin
+export const getAllCarrierRequests = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const requests = await CarrierRequest.find().sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      count: requests.length,
+      data: requests,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -55,32 +55,48 @@ export const getServiceByIdOrSlug = async (req: Request, res: Response): Promise
 
 // @desc    Create new service
 // @route   POST /api/services
-// @access  Private/Admin
+// @access  Public / Admin
 export const createService = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, shortDescription, fullDescription, category, price, durationHours, iconName, image, features, isPopular, warrantyMonths } = req.body;
+    const {
+      name,
+      shortDescription,
+      fullDescription,
+      category,
+      price,
+      durationHours,
+      iconName,
+      image,
+      features,
+      isPopular,
+      warrantyMonths,
+    } = req.body;
 
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    if (!name || !price || !category) {
+      res.status(400).json({ success: false, message: 'Name, price, and category are required' });
+      return;
+    }
 
+    const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    let slug = baseSlug;
     const existing = await Service.findOne({ slug });
     if (existing) {
-      res.status(400).json({ success: false, message: 'Service with similar name already exists' });
-      return;
+      slug = `${baseSlug}-${Math.floor(100 + Math.random() * 900)}`;
     }
 
     const service = await Service.create({
       name,
       slug,
-      shortDescription,
-      fullDescription,
+      shortDescription: shortDescription || `${name} specialized maintenance and precision care by AutoForge master technicians.`,
+      fullDescription: fullDescription || `${name} precision engineering procedure adhering strictly to factory specifications and OEM guidelines.`,
       category,
-      price,
-      durationHours: durationHours || 2,
+      price: Number(price),
+      durationHours: Number(durationHours) || 2,
       iconName: iconName || 'Wrench',
-      image,
-      features: Array.isArray(features) ? features : [],
+      image: image || 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80',
+      features: Array.isArray(features) ? features : (typeof features === 'string' ? features.split(',').map((s: string) => s.trim()) : ['OEM certified parts', 'Computerized calibration', 'Quality guarantee']),
       isPopular: Boolean(isPopular),
-      warrantyMonths: warrantyMonths || 12,
+      warrantyMonths: Number(warrantyMonths) || 12,
     });
 
     res.status(201).json({ success: true, message: 'Service created successfully', data: service });

@@ -5,6 +5,11 @@ import {
   getMyCarrierRequests,
   updateCarrierStatus,
   calculateDistancePreview,
+  getCarrierFleetLorries,
+  createCarrierLorry,
+  updateCarrierLorry,
+  deleteCarrierLorry,
+  getAllCarrierRequests,
 } from '../controllers/carrierController';
 
 const router = Router();
@@ -17,6 +22,15 @@ router.post('/request', requestCarrier);
 
 // Get user carrier requests or recent requests
 router.get('/my-requests', getMyCarrierRequests);
+
+// Admin: Get all customer breakdown requests
+router.get('/all-requests', getAllCarrierRequests);
+
+// Admin: Fleet Lorries CRUD
+router.get('/lorries', getCarrierFleetLorries);
+router.post('/lorries', createCarrierLorry);
+router.put('/lorries/:id', updateCarrierLorry);
+router.delete('/lorries/:id', deleteCarrierLorry);
 
 // Get carrier tracking by ID or tracking code
 router.get('/:id', getCarrierStatus);
