@@ -48,7 +48,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const verifyUrl = `${clientUrl}?verifyToken=${rawVerificationToken}`;
 
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'Verify Your AutoForge Account',
       html: createAutoForgeEmailTemplate(
@@ -63,7 +63,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     res.status(201).json({
       success: true,
-      message: 'Account created successfully! Verification email dispatched.',
+      message: emailResult.success
+        ? 'Account created successfully! Verification email dispatched.'
+        : 'Account created successfully! Check your email or use the verification link.',
       data: {
         _id: user._id,
         name: user.name,
@@ -73,6 +75,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         avatar: user.avatar,
         isEmailVerified: user.isEmailVerified,
         token,
+        verifyUrl,
       },
     });
   } catch (error: any) {
@@ -319,7 +322,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const resetUrl = `${clientUrl}?resetToken=${rawResetToken}`;
 
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: user.email,
       subject: 'Reset Your AutoForge Password',
       html: createAutoForgeEmailTemplate(
@@ -334,7 +337,10 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
     res.json({
       success: true,
-      message: 'Password reset link dispatched to your email address.',
+      message: emailResult.success
+        ? 'Password reset link dispatched to your email address.'
+        : 'Password reset link generated! If Gmail limits sending, you can use the direct reset link below.',
+      resetUrl,
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Failed to process password reset.' });

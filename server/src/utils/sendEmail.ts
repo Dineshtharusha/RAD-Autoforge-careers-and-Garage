@@ -31,18 +31,31 @@ export const sendEmail = async (options: EmailOptions): Promise<{ success: boole
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: emailHost,
-      port: emailPort,
-      secure: emailPort === 465,
-      auth: {
-        user: emailUser,
-        pass: emailPass,
-      },
-    });
+    const cleanPass = emailPass.replace(/\s+/g, '');
+    const isGmail = emailHost.includes('gmail') || emailUser.endsWith('@gmail.com');
+
+    const transporter = nodemailer.createTransport(
+      isGmail
+        ? {
+            service: 'gmail',
+            auth: {
+              user: emailUser,
+              pass: cleanPass,
+            },
+          }
+        : {
+            host: emailHost,
+            port: emailPort,
+            secure: emailPort === 465,
+            auth: {
+              user: emailUser,
+              pass: cleanPass,
+            },
+          }
+    );
 
     const info = await transporter.sendMail({
-      from: `"AutoForge Careers & Garage" <${emailFrom}>`,
+      from: `"AutoForge Careers & Garage" <${emailUser}>`,
       to: options.to,
       subject: options.subject,
       text: options.text || options.subject,

@@ -48,6 +48,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [directLink, setDirectLink] = useState<string | null>(null);
 
   // Form Fields
   const [name, setName] = useState('');
@@ -194,6 +195,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         try {
           const res = await authApi.forgotPassword(email);
           setSuccessMessage(res.data?.message || 'Password reset link sent! Please check your inbox.');
+          if (res.data?.resetUrl) {
+            setDirectLink(res.data.resetUrl);
+          }
         } catch (err: any) {
           setErrorMessage(err.response?.data?.message || 'Could not send reset link. Please verify your email.');
         }
@@ -307,9 +311,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Success Alert */}
         {successMessage && (
-          <div className="mb-4 flex items-start gap-2.5 p-3 text-xs text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 rounded-lg">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
-            <span className="leading-relaxed">{successMessage}</span>
+          <div className="mb-4 p-3 text-xs text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 rounded-lg space-y-2">
+            <div className="flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
+              <span className="leading-relaxed">{successMessage}</span>
+            </div>
+            {directLink && (
+              <div className="pt-2 border-t border-emerald-800/40">
+                <span className="text-[10px] text-gray-400 block mb-1">Direct Verification / Reset Link:</span>
+                <a
+                  href={directLink}
+                  className="text-[#E5A93C] underline break-all font-mono text-[11px] block hover:text-amber-200"
+                >
+                  {directLink}
+                </a>
+              </div>
+            )}
           </div>
         )}
 
