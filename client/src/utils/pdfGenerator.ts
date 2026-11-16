@@ -69,9 +69,9 @@ export const generateBookingInvoicePDF = (booking: Booking): void => {
 
   // Workshop Details
   doc.text(`Facility: ${booking.workshop.name || 'AutoForge Superhub'}`, 115, 66);
-  doc.text(`City: ${booking.workshop.city}, ${booking.workshop.country || 'International'}`, 115, 72);
-  doc.text(`Address: ${booking.workshop.address || 'Central Engineering Hub'}`, 115, 78);
-  doc.text(`Phone: ${booking.workshop.phone || '+91 80 4920 1800'}`, 115, 84);
+  doc.text(`City: ${booking.workshop.city || 'Galle'}, ${booking.workshop.country || 'Sri Lanka'}`, 115, 72);
+  doc.text(`Address: ${booking.workshop.address || 'Wakwella Road, Galle'}`, 115, 78);
+  doc.text(`Phone: ${booking.workshop.phone || '+94 91 224 8100'}`, 115, 84);
   doc.text(`Scheduled Date: ${booking.appointmentDate}`, 115, 90);
   doc.text(`Slot: ${booking.timeSlot}`, 115, 96);
 
@@ -106,23 +106,20 @@ export const generateBookingInvoicePDF = (booking: Booking): void => {
   doc.setDrawColor(230, 235, 240);
   doc.line(16, currentY + 12, 194, currentY + 12);
 
-  // Totals Box
-  const totalBoxY = currentY + 20;
+  // Totals Box (Without Environmental Tax)
+  const totalBoxY = currentY + 18;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text('Subtotal:', 135, totalBoxY);
   doc.text(`$${booking.totalAmount.toFixed(2)}`, 172, totalBoxY);
 
-  doc.text('State / Environmental Tax (0%):', 135, totalBoxY + 6);
-  doc.text('$0.00', 172, totalBoxY + 6);
-
   doc.setFillColor(248, 242, 225);
-  doc.rect(130, totalBoxY + 10, 64, 11, 'F');
+  doc.rect(130, totalBoxY + 5, 64, 11, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(170, 115, 15);
-  doc.text('TOTAL AMOUNT PAID:', 134, totalBoxY + 17);
-  doc.text(`$${booking.totalAmount.toFixed(2)}`, 172, totalBoxY + 17);
+  doc.text('TOTAL AMOUNT PAID:', 134, totalBoxY + 12);
+  doc.text(`$${booking.totalAmount.toFixed(2)}`, 172, totalBoxY + 12);
 
   // Warranty Stamp / Quality Assurance
   doc.setDrawColor(229, 169, 60);
