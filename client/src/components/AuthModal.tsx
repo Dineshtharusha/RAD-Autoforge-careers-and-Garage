@@ -15,16 +15,23 @@ import {
   ArrowLeft,
   KeyRound,
   ShieldCheck,
+  RefreshCw,
 } from 'lucide-react';
 import {
   loginStart,
   loginSuccess,
   loginFailure,
-  clearAuthError,
 } from '../redux/slices/authSlice';
 import { api, authApi } from '../services/api';
 
-export type AuthMode = 'login' | 'register' | 'forgot-password' | 'reset-password' | 'verify-email';
+export type AuthMode =
+  | 'login'
+  | 'register'
+  | 'forgot-password'
+  | 'reset-password'
+  | 'verify-email'
+  | 'verify-otp'
+  | 'reset-password-otp';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -46,6 +53,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [directLink, setDirectLink] = useState<string | null>(null);
@@ -58,16 +66,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<'customer' | 'technician'>('customer');
 
+  // OTP Fields
+  const [otp, setOtp] = useState('');
+  const [demoOTP, setDemoOTP] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   // Sync mode with initialMode prop
   useEffect(() => {
     if (initialMode) {
       setMode(initialMode);
       setErrorMessage(null);
       setSuccessMessage(null);
+      setDemoOTP(null);
+      setOtp('');
     }
   }, [initialMode, isOpen]);
 
-  // Handle direct verify-email invocation
+  // Handle countdown for resend button
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  // Handle direct verify-email invocation (cryptographic token link)
   useEffect(() => {
     if (isOpen && mode === 'verify-email' && verifyToken) {
       handleAutoVerify(verifyToken);
@@ -96,6 +120,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setErrorMessage(err.response?.data?.message || 'Invalid or expired verification link.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendSignupOTP = async () => {
+    if (resendCooldown > 0 || resending || !email) return;
+    setResending(true);
+    setErrorMessage(null);
+    try {
+      const res = await authApi.resendSignupOTP(email);
+      setSuccessMessage('A new 6-digit verification passcode has been dispatched!');
+      if (res.data?.otp) {
+        setDemoOTP(res.data.otp);
+      }
+      setResendCooldown(30);
+    } catch (err: any) {
+      setErrorMessage(err.response?.data?.message || 'Failed to resend code. Please try again.');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleResendResetOTP = async () => {
+    if (resendCooldown > 0 || resending || !email) return;
+    setResending(true);
+    setErrorMessage(null);
+    try {
+      const res = await authApi.forgotPassword(email);
+      setSuccessMessage('A new 6-digit password reset passcode has been dispatched!');
+      if (res.data?.otp) {
+        setDemoOTP(res.data.otp);
+      }
+      setResendCooldown(30);
+    } catch (err: any) {
+      setErrorMessage(err.response?.data?.message || 'Failed to resend passcode.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -154,55 +214,121 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
       } else if (mode === 'register') {
         dispatch(loginStart());
-        const response = await api.post('/auth/register', {
-          name,
-          email,
-          password,
-          phone,
-          role,
-        }).catch(() => {
-          return {
-            data: {
-              success: true,
-              data: {
-                _id: 'usr-new-1',
-                name,
-                email,
-                role,
-                token: 'mock-jwt-new-token',
-              },
-            },
-          };
-        });
+        try {
+          const res = await authApi.register({
+            name,
+            email,
+            password,
+            phone,
+            role,
+          });
 
-        if (response.data && response.data.success) {
-          dispatch(
-            loginSuccess({
-              user: response.data.data,
-              token: response.data.data.token,
-            })
-          );
-          setSuccessMessage('Account created! A verification email has been dispatched to your address.');
-          setTimeout(() => {
-            onClose();
-          }, 2000);
-        } else {
-          setErrorMessage(response.data?.message || 'Registration failed.');
-          dispatch(loginFailure(response.data?.message || 'Registration failed'));
+          if (res.data?.success) {
+            // Save fail-safe OTP for instant presentation / examiner preview
+            if (res.data.data?.otp) {
+              setDemoOTP(res.data.data.otp);
+            }
+            setMode('verify-otp');
+            setSuccessMessage('Account registered! Enter the 6-digit passcode sent to your email to verify.');
+            setResendCooldown(30);
+          } else {
+            setErrorMessage(res.data?.message || 'Registration failed.');
+            dispatch(loginFailure(res.data?.message || 'Registration failed'));
+          }
+        } catch (regErr: any) {
+          const msg = regErr.response?.data?.message || 'Registration failed.';
+          setErrorMessage(msg);
+          dispatch(loginFailure(msg));
+        }
+      } else if (mode === 'verify-otp') {
+        // Submit 6-digit OTP for signup verification
+        if (!otp || otp.length !== 6) {
+          setErrorMessage('Please enter the full 6-digit verification passcode.');
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const res = await authApi.verifySignupOTP(email, otp);
+          if (res.data?.success) {
+            setSuccessMessage('Account verified successfully! Welcome to AutoForge.');
+            if (res.data.data?.token) {
+              dispatch(
+                loginSuccess({
+                  user: res.data.data,
+                  token: res.data.data.token,
+                })
+              );
+            }
+            setTimeout(() => {
+              onClose();
+            }, 1500);
+          } else {
+            setErrorMessage(res.data?.message || 'Invalid passcode. Please try again.');
+          }
+        } catch (verifyErr: any) {
+          setErrorMessage(verifyErr.response?.data?.message || 'Verification passcode incorrect or expired.');
         }
       } else if (mode === 'forgot-password') {
-        // Send Forgot Password link
+        // Send Forgot Password OTP
         try {
           const res = await authApi.forgotPassword(email);
-          setSuccessMessage(res.data?.message || 'Password reset link sent! Please check your inbox.');
-          if (res.data?.resetUrl) {
-            setDirectLink(res.data.resetUrl);
+          if (res.data?.success) {
+            if (res.data.otp) {
+              setDemoOTP(res.data.otp);
+            }
+            setMode('reset-password-otp');
+            setSuccessMessage('Password reset passcode sent! Please check your inbox.');
+            setResendCooldown(30);
+          } else {
+            setErrorMessage(res.data?.message || 'Could not send reset code.');
           }
         } catch (err: any) {
-          setErrorMessage(err.response?.data?.message || 'Could not send reset link. Please verify your email.');
+          setErrorMessage(err.response?.data?.message || 'No registered account found with this email.');
+        }
+      } else if (mode === 'reset-password-otp') {
+        // Reset Password with 6-digit OTP + New Password
+        if (!otp || otp.length !== 6) {
+          setErrorMessage('Please enter the 6-digit verification code.');
+          setLoading(false);
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          setErrorMessage('Passwords do not match.');
+          setLoading(false);
+          return;
+        }
+
+        if (password.length < 6) {
+          setErrorMessage('Password must be at least 6 characters.');
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const res = await authApi.resetPasswordWithOTP(email, otp, password);
+          if (res.data?.success) {
+            setSuccessMessage('Password updated successfully! Logging you in...');
+            if (res.data.data?.token) {
+              dispatch(
+                loginSuccess({
+                  user: res.data.data,
+                  token: res.data.data.token,
+                })
+              );
+            }
+            setTimeout(() => {
+              onClose();
+            }, 1600);
+          } else {
+            setErrorMessage(res.data?.message || 'Failed to update password.');
+          }
+        } catch (err: any) {
+          setErrorMessage(err.response?.data?.message || 'Invalid passcode or expired request.');
         }
       } else if (mode === 'reset-password') {
-        // Reset Password submission
+        // Legacy token reset submission
         if (password !== confirmPassword) {
           setErrorMessage('Passwords do not match.');
           setLoading(false);
@@ -229,7 +355,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }
             setTimeout(() => {
               onClose();
-            }, 1800);
+            }, 1600);
           } else {
             setErrorMessage(res.data?.message || 'Failed to reset password.');
           }
@@ -266,9 +392,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      {/* Backdrop Garage Background Blur simulation */}
+      {/* Garage Modal Container */}
       <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-[#0F141E]/95 border border-[#2E374A]/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] p-8 text-white backdrop-blur-2xl">
-        
         {/* Subtle ambient gold glow in corner */}
         <div className="absolute -top-16 -right-16 w-44 h-44 bg-[#E5A93C]/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -289,25 +414,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <span className="text-xs uppercase tracking-[0.28em] font-semibold text-[#E5A93C]">
             AutoForge
           </span>
-          <span className="text-[9px] uppercase tracking-[0.25em] text-gray-400 mb-3">
+          <span className="text-[9px] uppercase tracking-[0.25em] text-gray-400 mb-2">
             Careers & Garage
           </span>
 
           <h2 className="text-2xl font-bold tracking-tight text-white font-serif">
             {mode === 'login' && 'Welcome Back'}
             {mode === 'register' && 'Join AutoForge'}
+            {mode === 'verify-otp' && 'Verify Your Email'}
             {mode === 'forgot-password' && 'Reset Password'}
+            {mode === 'reset-password-otp' && 'Set New Password'}
             {mode === 'reset-password' && 'New Password'}
             {mode === 'verify-email' && 'Email Verification'}
           </h2>
           <p className="text-xs text-gray-400 mt-1 max-w-xs">
             {mode === 'login' && 'Sign in to access your garage bookings and carrier telemetry.'}
             {mode === 'register' && 'Create your account to book services and track careers.'}
-            {mode === 'forgot-password' && 'Enter your email address and we will dispatch a secure recovery link.'}
+            {mode === 'verify-otp' && `Enter the 6-digit passcode sent to ${email}`}
+            {mode === 'forgot-password' && 'Enter your email address to receive a 6-digit reset code.'}
+            {mode === 'reset-password-otp' && `Enter the 6-digit code sent to ${email} and set your new password.`}
             {mode === 'reset-password' && 'Choose a secure password for your AutoForge account.'}
             {mode === 'verify-email' && 'Verifying your email token with the AutoForge central server.'}
           </p>
         </div>
+
+        {/* Presentation / Demo Fail-Safe Helper Badge */}
+        {demoOTP && (mode === 'verify-otp' || mode === 'reset-password-otp') && (
+          <div className="mb-4 p-3 bg-[#161D2B] border border-[#E5A93C]/50 rounded-xl text-center shadow-[0_0_15px_rgba(229,169,60,0.15)] animate-pulse">
+            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#E5A93C] block mb-1">
+              ✨ Demo & Presentation Passcode
+            </span>
+            <div className="font-mono text-2xl font-extrabold tracking-[0.35em] text-white">
+              {demoOTP}
+            </div>
+            <span className="text-[10px] text-gray-400 block mt-1">
+              Instant verification code (bypass email delay during examiner presentation)
+            </span>
+          </div>
+        )}
 
         {/* Success Alert */}
         {successMessage && (
@@ -338,7 +482,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
 
-        {/* VERIFY EMAIL MODE DISPLAY */}
+        {/* VERIFY EMAIL MODE (Legacy Cryptographic Link) */}
         {mode === 'verify-email' ? (
           <div className="text-center py-6 space-y-4">
             {loading ? (
@@ -370,8 +514,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
           </div>
         ) : (
-          /* STANDARD FORMS */
+          /* STANDARD FORM SUBMISSION */
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* REGISTER: Full Name */}
             {mode === 'register' && (
               <div>
                 <label className="block text-[11px] font-medium text-gray-300 mb-1.5 uppercase tracking-wider">
@@ -392,10 +537,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
 
             {/* Email Field (for login, register, forgot-password) */}
-            {mode !== 'reset-password' && (
+            {(mode === 'login' || mode === 'register' || mode === 'forgot-password') && (
               <div>
                 <label className="block text-[11px] font-medium text-gray-300 mb-1.5 uppercase tracking-wider">
-                  Email
+                  Email Address
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-3 w-4 h-4 text-[#E5A93C]" />
@@ -404,13 +549,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
+                    placeholder="alexander@autoforge.com"
                     className="w-full bg-[#151B27]/80 border border-[#2B3549] focus:border-[#E5A93C] focus:ring-1 focus:ring-[#E5A93C] text-sm text-white placeholder-gray-500 rounded-lg pl-10 pr-4 py-2.5 outline-none transition-all"
                   />
                 </div>
               </div>
             )}
 
+            {/* REGISTER: Phone Number */}
             {mode === 'register' && (
               <div>
                 <label className="block text-[11px] font-medium text-gray-300 mb-1.5 uppercase tracking-wider">
@@ -429,11 +575,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
-            {/* Password Field (for login, register, reset-password) */}
-            {mode !== 'forgot-password' && (
+            {/* OTP CODE INPUT (For verify-otp and reset-password-otp) */}
+            {(mode === 'verify-otp' || mode === 'reset-password-otp') && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-medium text-gray-300 uppercase tracking-wider">
+                    6-Digit Passcode
+                  </label>
+                  <button
+                    type="button"
+                    disabled={resendCooldown > 0 || resending}
+                    onClick={mode === 'verify-otp' ? handleResendSignupOTP : handleResendResetOTP}
+                    className="text-[11px] text-[#E5A93C] hover:underline disabled:opacity-50 flex items-center gap-1"
+                  >
+                    {resending && <Loader2 className="w-3 h-3 animate-spin" />}
+                    <span>
+                      {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : 'Resend Code'}
+                    </span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <KeyRound className="absolute left-3.5 top-3 w-4 h-4 text-[#E5A93C]" />
+                  <input
+                    type="text"
+                    maxLength={6}
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="123456"
+                    className="w-full bg-[#151B27]/80 border border-[#2B3549] focus:border-[#E5A93C] focus:ring-1 focus:ring-[#E5A93C] text-center font-mono text-xl tracking-[0.4em] text-[#E5A93C] placeholder-gray-600 rounded-lg pl-10 pr-4 py-2.5 outline-none transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Password Field (for login, register, reset-password, reset-password-otp) */}
+            {(mode === 'login' ||
+              mode === 'register' ||
+              mode === 'reset-password' ||
+              mode === 'reset-password-otp') && (
               <div>
                 <label className="block text-[11px] font-medium text-gray-300 mb-1.5 uppercase tracking-wider">
-                  {mode === 'reset-password' ? 'New Password' : 'Password'}
+                  {mode === 'reset-password' || mode === 'reset-password-otp'
+                    ? 'New Password'
+                    : 'Password'}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-3 w-4 h-4 text-[#E5A93C]" />
@@ -442,7 +627,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={mode === 'reset-password' ? 'Enter new password (min. 6 characters)' : 'Enter your password'}
+                    placeholder={
+                      mode === 'reset-password' || mode === 'reset-password-otp'
+                        ? 'Min. 6 characters'
+                        : 'Enter your password'
+                    }
                     className="w-full bg-[#151B27]/80 border border-[#2B3549] focus:border-[#E5A93C] focus:ring-1 focus:ring-[#E5A93C] text-sm text-white placeholder-gray-500 rounded-lg pl-10 pr-10 py-2.5 outline-none transition-all"
                   />
                   <button
@@ -456,8 +645,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
-            {/* Confirm Password Field (for reset-password only) */}
-            {mode === 'reset-password' && (
+            {/* Confirm Password Field (for reset-password and reset-password-otp) */}
+            {(mode === 'reset-password' || mode === 'reset-password-otp') && (
               <div>
                 <label className="block text-[11px] font-medium text-gray-300 mb-1.5 uppercase tracking-wider">
                   Confirm New Password
@@ -476,6 +665,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
+            {/* Login Remember Me & Forgot Password Link */}
             {mode === 'login' && (
               <div className="flex items-center justify-between text-xs pt-1">
                 <label className="flex items-center gap-2 cursor-pointer text-gray-300 hover:text-white">
@@ -493,6 +683,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setMode('forgot-password');
                     setErrorMessage(null);
                     setSuccessMessage(null);
+                    setDemoOTP(null);
                   }}
                   className="text-[#E5A93C] hover:underline"
                 >
@@ -511,20 +702,34 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  {mode === 'forgot-password' ? (
+                  {mode === 'forgot-password' && (
                     <>
                       <Mail className="w-4 h-4 fill-current" />
-                      <span>Send Recovery Email</span>
+                      <span>Send Recovery Passcode</span>
                     </>
-                  ) : mode === 'reset-password' ? (
+                  )}
+                  {mode === 'verify-otp' && (
+                    <>
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Verify & Activate Account</span>
+                    </>
+                  )}
+                  {(mode === 'reset-password' || mode === 'reset-password-otp') && (
                     <>
                       <KeyRound className="w-4 h-4" />
                       <span>Update Password & Sign In</span>
                     </>
-                  ) : (
+                  )}
+                  {mode === 'login' && (
                     <>
                       <Car className="w-4 h-4 fill-current" />
-                      <span>{mode === 'login' ? 'Sign In' : 'Create Account'}</span>
+                      <span>Sign In</span>
+                    </>
+                  )}
+                  {mode === 'register' && (
+                    <>
+                      <Car className="w-4 h-4 fill-current" />
+                      <span>Create Account</span>
                     </>
                   )}
                 </>
@@ -533,8 +738,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </form>
         )}
 
-        {/* Back to sign in from forgot-password */}
-        {mode === 'forgot-password' && (
+        {/* Back / Navigation buttons for sub-modes */}
+        {(mode === 'forgot-password' || mode === 'verify-otp' || mode === 'reset-password-otp') && (
           <div className="mt-4 text-center">
             <button
               type="button"
@@ -542,6 +747,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setMode('login');
                 setErrorMessage(null);
                 setSuccessMessage(null);
+                setDemoOTP(null);
+                setOtp('');
               }}
               className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
             >
@@ -586,7 +793,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                   />
                 </svg>
-                <span>Continue with Google</span>
+                <span>Google</span>
               </button>
 
               <button
@@ -596,7 +803,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <svg className="w-4 h-4 fill-current text-white" viewBox="0 0 170 170">
                   <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.08-7.5-7.79-11.44-14.14-5.87-9.44-10.4-19.8-13.59-31.06-3.19-11.26-4.79-22.18-4.79-32.76 0-14.77 3.59-26.68 10.77-35.73 7.18-9.05 16.27-13.68 27.27-13.9 4.89 0 10.3 1.34 16.23 4.02 5.93 2.68 9.94 4.08 12.04 4.2 1.63 0 5.56-1.4 11.79-4.2 6.23-2.8 11.83-4.09 16.8-3.87 12.82.65 23.01 5.34 30.58 14.07-11.3 6.84-16.85 16.4-16.63 28.68.22 9.56 3.86 17.5 10.92 23.82 7.06 6.32 15.42 9.9 25.09 10.75-2.06 6.08-4.53 12.16-7.41 18.23zM119.22 33.15c0-7.39 2.66-14.28 7.98-20.67 5.32-6.39 12.01-10.55 20.07-12.48.22 1.09.33 2.07.33 2.94 0 7.39-2.77 14.52-8.31 21.39-5.54 6.87-12.28 10.82-20.21 11.85-.22-1.09-.33-2.07-.33-2.94z" />
                 </svg>
-                <span>Continue with Apple</span>
+                <span>Apple</span>
               </button>
             </div>
 
@@ -611,6 +818,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setMode('register');
                       setErrorMessage(null);
                       setSuccessMessage(null);
+                      setDemoOTP(null);
                     }}
                     className="text-[#E5A93C] font-semibold hover:underline ml-1"
                   >
@@ -626,6 +834,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setMode('login');
                       setErrorMessage(null);
                       setSuccessMessage(null);
+                      setDemoOTP(null);
                     }}
                     className="text-[#E5A93C] font-semibold hover:underline ml-1"
                   >
@@ -636,9 +845,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           </>
         )}
-
       </div>
     </div>
   );
 };
-
