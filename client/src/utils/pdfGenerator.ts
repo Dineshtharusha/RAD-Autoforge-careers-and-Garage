@@ -132,7 +132,7 @@ export const generateBookingInvoicePDF = (booking: Booking): void => {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(90, 95, 105);
-  doc.text('• 12-Month / 15,000 km Guaranteed Workmanship', 22, totalBoxY + 16);
+  doc.text('• 12-Month / 10,000 km Guaranteed Workmanship', 22, totalBoxY + 16);
   doc.text('• Genuine OEM & Certified High-Performance Components', 22, totalBoxY + 21);
 
   // Footer Note
