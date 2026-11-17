@@ -58,7 +58,7 @@ export const App: React.FC = () => {
   // Automatic redirection: when admin logs in, land directly on admin dashboard; when logging out, return to customer home
   useEffect(() => {
     if (isAdmin) {
-      if (!activeTab.startsWith('admin')) {
+      if (!activeTab.startsWith('admin') && activeTab !== 'careers') {
         setActiveTab('admin-overview');
       }
     } else {
@@ -129,7 +129,7 @@ export const App: React.FC = () => {
           <WorkshopsPage onBookWorkshop={handleBookWorkshop} />
         )}
 
-        {!isAdmin && activeTab === 'careers' && (
+        {activeTab === 'careers' && (
           <CareersPage
             onBookServiceClick={() => setBookingModalOpen(true)}
             onExploreServicesClick={() => setActiveTab('services')}
