@@ -254,6 +254,14 @@ export const lorryApi = {
   getAllRequests: () => api.get('/carriers/all-requests'),
 };
 
+export const applicationApi = {
+  getAll: (params?: { status?: string; jobId?: string }) =>
+    api.get('/applications', { params }),
+  submit: (data: any) => api.post('/applications', data),
+  updateStatus: (id: string, status: string, notes?: string) =>
+    api.patch(`/applications/${id}/status`, { status, notes }),
+};
+
 export const authApi = {
   register: (data: any) => api.post('/auth/register', data),
   login: (data: any) => api.post('/auth/login', data),
