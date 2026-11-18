@@ -42,6 +42,9 @@ export const sendEmail = async (options: EmailOptions): Promise<{ success: boole
               user: emailUser,
               pass: cleanPass,
             },
+            connectionTimeout: 6000, // 6 seconds fast-fail if cloud firewall blocks SMTP
+            greetingTimeout: 5000,
+            socketTimeout: 8000,
           }
         : {
             host: emailHost,
@@ -51,6 +54,9 @@ export const sendEmail = async (options: EmailOptions): Promise<{ success: boole
               user: emailUser,
               pass: cleanPass,
             },
+            connectionTimeout: 6000,
+            greetingTimeout: 5000,
+            socketTimeout: 8000,
           }
     );
 
