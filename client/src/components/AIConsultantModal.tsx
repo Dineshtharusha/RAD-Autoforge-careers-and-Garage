@@ -78,7 +78,7 @@ export const AIConsultantModal: React.FC<AIConsultantModalProps> = ({
                 suggestedAction: 'Schedule a certified precision diagnostic bay inspection immediately.',
               },
               analyzedAt: new Date().toISOString(),
-              poweredBy: 'AutoForge AI Diagnostic Engine v2.0 (Powered by Gemini Architecture)',
+              poweredBy: 'AutoForge AI Diagnostic Engine v2.0',
             },
           },
         };
@@ -122,9 +122,6 @@ export const AIConsultantModal: React.FC<AIConsultantModalProps> = ({
               <h2 className="text-xl font-bold font-serif text-white">
                 AutoForge AI Diagnostic Assistant
               </h2>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-[#E5A93C] border border-[#E5A93C]/30 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Gemini
-              </span>
             </div>
             <p className="text-xs text-gray-400">
               Instant AI vehicle symptom triage, root-cause probability analysis, and repair estimate.
@@ -214,7 +211,7 @@ export const AIConsultantModal: React.FC<AIConsultantModalProps> = ({
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Running Gemini Automotive Diagnostic Telemetry...</span>
+                <span>Running Automotive Diagnostic Telemetry...</span>
               </>
             ) : (
               <>
