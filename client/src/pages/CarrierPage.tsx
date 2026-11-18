@@ -20,7 +20,6 @@ import {
   Share2,
   Zap,
   ArrowRight,
-  ChevronRight,
   ShieldCheck,
   Search,
   Crosshair,
@@ -1128,7 +1127,7 @@ export const CarrierPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Bottom Map Controls & Simulation Tool */}
+                  {/* Bottom Map Controls */}
                   <div className="relative z-10 pt-4 border-t border-[#1C2536] flex flex-wrap items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-3">
                       <span className="text-gray-400">Trip Stage:</span>
@@ -1138,39 +1137,6 @@ export const CarrierPage: React.FC = () => {
                         {trackingStep === 4 && 'Vehicle Hooked & Towing to Workshop'}
                         {trackingStep === 5 && 'Safely Delivered at AutoForge Garage'}
                       </span>
-                    </div>
-
-                    {/* Simulation Controls for Evaluator Testing */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (trackingStep < 5) {
-                            setTrackingStep((s) => s + 1);
-                            setTruckProgress((p) => Math.min(100, p + 25));
-                            if (trackingStep === 2) setEtaRemaining(2);
-                            if (trackingStep >= 3) setEtaRemaining(0);
-                          }
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/20 text-[11px] text-white flex items-center gap-1.5 transition-all"
-                        title="Simulate driver progression along route"
-                      >
-                        <ChevronRight className="w-3.5 h-3.5 text-[#E5A93C]" />
-                        <span>Advance Step (Demo)</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTrackingStep(2);
-                          setTruckProgress(20);
-                          setEtaRemaining(10);
-                        }}
-                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/20 text-gray-400 hover:text-white"
-                        title="Reset simulation"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                      </button>
                     </div>
                   </div>
                 </div>
