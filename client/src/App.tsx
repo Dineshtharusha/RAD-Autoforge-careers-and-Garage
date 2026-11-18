@@ -14,7 +14,7 @@ import { MyBookingsPage } from './pages/MyBookingsPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { CarrierPage } from './pages/CarrierPage';
 import { Service, Workshop } from './types';
-import { ShieldCheck, Award, Zap, Globe, Sparkles } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Award, Zap, Globe, Sparkles } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -100,9 +100,41 @@ export const App: React.FC = () => {
 
       {/* Main Page Body */}
       <main className="flex-1">
-        {/* Admin Dashboard - Rendered for all admin- prefixed tabs */}
+        {/* Admin Dashboard - Rendered strictly for verified Admin accounts */}
         {activeTab.startsWith('admin') && (
-          <AdminDashboard activeSection={activeTab} />
+          isAdmin ? (
+            <AdminDashboard activeSection={activeTab} />
+          ) : (
+            <div className="pt-32 pb-20 min-h-screen bg-[#080B10] flex items-center justify-center p-4">
+              <div className="max-w-md w-full p-8 rounded-2xl bg-[#0F141F] border border-red-500/40 text-center shadow-2xl animate-fadeIn">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4">
+                  <ShieldAlert className="w-8 h-8" />
+                </div>
+                <h2 className="text-2xl font-serif font-bold text-white mb-2">403 - Access Denied</h2>
+                <p className="text-xs text-gray-400 leading-relaxed mb-6">
+                  {isAuthenticated
+                    ? `Logged in as ${user?.name || user?.email} (${user?.role}). Only verified AutoForge Administrators can enter this dashboard.`
+                    : 'Administrator privileges required. Please sign in with an authorized Executive Administrator account to proceed.'}
+                </p>
+                <div className="flex gap-3">
+                  {!isAuthenticated ? (
+                    <button
+                      onClick={() => handleOpenAuth('login')}
+                      className="flex-1 py-3 rounded-lg bg-[#E5A93C] text-[#0A0D13] font-bold text-xs uppercase tracking-wider hover:bg-amber-400 transition-colors shadow-gold"
+                    >
+                      Sign In as Admin
+                    </button>
+                  ) : null}
+                  <button
+                    onClick={() => setActiveTab('home')}
+                    className="flex-1 py-3 rounded-lg border border-[#2B3549] text-gray-300 font-bold text-xs uppercase tracking-wider hover:text-white transition-colors"
+                  >
+                    Return Home
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
         )}
 
         {/* Customer Only Pages (Hidden when Admin is Active) */}

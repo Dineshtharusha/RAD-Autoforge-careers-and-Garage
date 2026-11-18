@@ -36,7 +36,25 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ activeSection }) => {
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const isAdmin = Boolean(isAuthenticated && user?.role === 'admin');
+
+  // If not admin, block access immediately
+  if (!isAdmin) {
+    return (
+      <div className="pt-32 pb-20 min-h-screen bg-[#080B10] flex items-center justify-center p-4">
+        <div className="max-w-md w-full p-8 rounded-2xl bg-[#0F141F] border border-red-500/40 text-center shadow-2xl animate-fadeIn">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-serif font-bold text-white mb-2">403 - Access Denied</h2>
+          <p className="text-xs text-gray-400 leading-relaxed mb-6">
+            Administrator privileges required. You do not have permission to access the AutoForge Executive Management Portal.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Tabs: overview | services | lorries | tow-requests | bookings | applications
   const [activeTab, setActiveTab] = useState<
