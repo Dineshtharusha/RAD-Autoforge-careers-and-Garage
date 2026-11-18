@@ -86,7 +86,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         avatar: user.avatar,
         isEmailVerified: user.isEmailVerified,
         token,
-        otp: signupOTP, // Fail-safe fallback for viva presentation / offline SMTP
       },
     });
   } catch (error: any) {
@@ -215,10 +214,7 @@ export const resendSignupOTP = async (req: Request, res: Response): Promise<void
 
     res.json({
       success: true,
-      message: emailResult.success
-        ? 'A new verification passcode has been sent to your email.'
-        : 'Passcode generated! Please check your email.',
-      otp: newOTP, // fail-safe for viva / offline SMTP
+      message: 'A new verification passcode has been dispatched to your email.',
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message || 'Failed to resend verification passcode.' });
@@ -491,10 +487,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
     res.json({
       success: true,
-      message: emailResult.success
-        ? 'A 6-digit password reset passcode has been sent to your email address.'
-        : 'Password reset code generated! Check your email or use the passcode below.',
-      otp: resetOTP, // Fail-safe for presentation / offline SMTP
+      message: 'A 6-digit password reset passcode has been sent to your email address.',
       resetUrl,
     });
   } catch (error: any) {

@@ -12,6 +12,37 @@ export interface EmailOptions {
  * Falls back to console output if SMTP credentials are not yet configured.
  */
 export const sendEmail = async (options: EmailOptions): Promise<{ success: boolean; preview?: string }> => {
+  // 1. If RESEND_API_KEY is configured (Bypasses Render cloud SMTP port blocking via Port 443 HTTPS)
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (resendApiKey) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${resendApiKey}`,
+        },
+        body: JSON.stringify({
+          from: process.env.EMAIL_FROM || 'AutoForge <onboarding@resend.dev>',
+          to: [options.to],
+          subject: options.subject,
+          html: options.html,
+        }),
+      });
+
+      const data: any = await res.json();
+      if (res.ok) {
+        console.log(`📧 [AutoForge Email - Resend API] Sent successfully to ${options.to} (ID: ${data.id})`);
+        return { success: true, preview: data.id };
+      } else {
+        console.error('❌ [AutoForge Resend API Error]:', data.message || JSON.stringify(data));
+      }
+    } catch (apiErr: any) {
+      console.error('❌ [AutoForge Resend Fetch Exception]:', apiErr.message);
+    }
+  }
+
+  // 2. Standard SMTP Dispatcher (Nodemailer - Gmail / Custom SMTP)
   const emailUser = process.env.EMAIL_USER;
   const emailPass = process.env.EMAIL_PASS;
   const emailHost = process.env.EMAIL_HOST || 'smtp.gmail.com';

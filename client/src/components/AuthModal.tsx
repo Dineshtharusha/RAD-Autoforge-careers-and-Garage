@@ -56,7 +56,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [resending, setResending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [directLink, setDirectLink] = useState<string | null>(null);
 
   // Form Fields
   const [name, setName] = useState('');
@@ -68,7 +67,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   // OTP Fields
   const [otp, setOtp] = useState('');
-  const [demoOTP, setDemoOTP] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
   // Sync mode with initialMode prop
@@ -77,7 +75,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setMode(initialMode);
       setErrorMessage(null);
       setSuccessMessage(null);
-      setDemoOTP(null);
       setOtp('');
     }
   }, [initialMode, isOpen]);
@@ -128,11 +125,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setResending(true);
     setErrorMessage(null);
     try {
-      const res = await authApi.resendSignupOTP(email);
-      setSuccessMessage('A new 6-digit verification passcode has been dispatched!');
-      if (res.data?.otp) {
-        setDemoOTP(res.data.otp);
-      }
+      await authApi.resendSignupOTP(email);
+      setSuccessMessage('A new 6-digit verification passcode has been dispatched to your email!');
       setResendCooldown(30);
     } catch (err: any) {
       setErrorMessage(err.response?.data?.message || 'Failed to resend code. Please try again.');
@@ -146,11 +140,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setResending(true);
     setErrorMessage(null);
     try {
-      const res = await authApi.forgotPassword(email);
-      setSuccessMessage('A new 6-digit password reset passcode has been dispatched!');
-      if (res.data?.otp) {
-        setDemoOTP(res.data.otp);
-      }
+      await authApi.forgotPassword(email);
+      setSuccessMessage('A new 6-digit password reset passcode has been dispatched to your email!');
       setResendCooldown(30);
     } catch (err: any) {
       setErrorMessage(err.response?.data?.message || 'Failed to resend passcode.');
@@ -204,10 +195,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           });
 
           if (res.data?.success) {
-            // Save fail-safe OTP for instant presentation / examiner preview
-            if (res.data.data?.otp) {
-              setDemoOTP(res.data.data.otp);
-            }
             setMode('verify-otp');
             setSuccessMessage('Account registered! Enter the 6-digit passcode sent to your email to verify.');
             setResendCooldown(30);
@@ -254,9 +241,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         try {
           const res = await authApi.forgotPassword(email);
           if (res.data?.success) {
-            if (res.data.otp) {
-              setDemoOTP(res.data.otp);
-            }
             setMode('reset-password-otp');
             setSuccessMessage('Password reset passcode sent! Please check your inbox.');
             setResendCooldown(30);
@@ -408,39 +392,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </p>
         </div>
 
-        {/* Presentation / Demo Fail-Safe Helper Badge */}
-        {demoOTP && (mode === 'verify-otp' || mode === 'reset-password-otp') && (
-          <div className="mb-4 p-3 bg-[#161D2B] border border-[#E5A93C]/50 rounded-xl text-center shadow-[0_0_15px_rgba(229,169,60,0.15)] animate-pulse">
-            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#E5A93C] block mb-1">
-              ✨ Demo & Presentation Passcode
-            </span>
-            <div className="font-mono text-2xl font-extrabold tracking-[0.35em] text-white">
-              {demoOTP}
-            </div>
-            <span className="text-[10px] text-gray-400 block mt-1">
-              Instant verification code (bypass email delay during examiner presentation)
-            </span>
-          </div>
-        )}
-
         {/* Success Alert */}
         {successMessage && (
-          <div className="mb-4 p-3 text-xs text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 rounded-lg space-y-2">
-            <div className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
-              <span className="leading-relaxed">{successMessage}</span>
-            </div>
-            {directLink && (
-              <div className="pt-2 border-t border-emerald-800/40">
-                <span className="text-[10px] text-gray-400 block mb-1">Direct Verification / Reset Link:</span>
-                <a
-                  href={directLink}
-                  className="text-[#E5A93C] underline break-all font-mono text-[11px] block hover:text-amber-200"
-                >
-                  {directLink}
-                </a>
-              </div>
-            )}
+          <div className="mb-4 flex items-start gap-2.5 p-3 text-xs text-emerald-300 bg-emerald-950/40 border border-emerald-800/60 rounded-lg">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
+            <span className="leading-relaxed">{successMessage}</span>
           </div>
         )}
 
@@ -653,7 +609,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setMode('forgot-password');
                     setErrorMessage(null);
                     setSuccessMessage(null);
-                    setDemoOTP(null);
                   }}
                   className="text-[#E5A93C] hover:underline"
                 >
@@ -717,7 +672,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 setMode('login');
                 setErrorMessage(null);
                 setSuccessMessage(null);
-                setDemoOTP(null);
                 setOtp('');
               }}
               className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
@@ -788,7 +742,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setMode('register');
                       setErrorMessage(null);
                       setSuccessMessage(null);
-                      setDemoOTP(null);
                     }}
                     className="text-[#E5A93C] font-semibold hover:underline ml-1"
                   >
@@ -804,7 +757,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setMode('login');
                       setErrorMessage(null);
                       setSuccessMessage(null);
-                      setDemoOTP(null);
                     }}
                     className="text-[#E5A93C] font-semibold hover:underline ml-1"
                   >
