@@ -170,47 +170,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       if (mode === 'login') {
         dispatch(loginStart());
-        const response = await api.post('/auth/login', { email, password }).catch(() => {
-          // Demo fallback if backend is offline
-          if (email.includes('admin')) {
-            return {
-              data: {
-                success: true,
-                data: {
-                  _id: 'usr-admin-1',
-                  name: 'AutoForge Executive Admin',
-                  email,
-                  role: 'admin',
-                  token: 'mock-jwt-admin-token',
-                },
-              },
-            };
+        try {
+          const response = await authApi.login({ email, password });
+          if (response.data && response.data.success) {
+            dispatch(
+              loginSuccess({
+                user: response.data.data,
+                token: response.data.data.token,
+              })
+            );
+            onClose();
+          } else {
+            const msg = response.data?.message || 'Invalid email or password.';
+            setErrorMessage(msg);
+            dispatch(loginFailure(msg));
           }
-          return {
-            data: {
-              success: true,
-              data: {
-                _id: 'usr-cust-1',
-                name: name || 'Alexander Wright',
-                email,
-                role: 'customer',
-                token: 'mock-jwt-customer-token',
-              },
-            },
-          };
-        });
-
-        if (response.data && response.data.success) {
-          dispatch(
-            loginSuccess({
-              user: response.data.data,
-              token: response.data.data.token,
-            })
-          );
-          onClose();
-        } else {
-          setErrorMessage(response.data?.message || 'Invalid email or password.');
-          dispatch(loginFailure(response.data?.message || 'Login failed'));
+        } catch (loginErr: any) {
+          const msg =
+            loginErr.response?.data?.message ||
+            'Invalid email or password. Please verify your credentials.';
+          setErrorMessage(msg);
+          dispatch(loginFailure(msg));
         }
       } else if (mode === 'register') {
         dispatch(loginStart());
@@ -375,19 +355,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const handleSocialMock = (provider: string) => {
-    dispatch(
-      loginSuccess({
-        user: {
-          _id: `social-${Date.now()}`,
-          name: `${provider} Verified User`,
-          email: `user@${provider.toLowerCase()}.com`,
-          role: 'customer',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-        },
-        token: `mock-oauth-${provider}-token`,
-      })
+    setErrorMessage(
+      `${provider} OAuth is currently in demonstration mode. Please sign in using your registered AutoForge email and password.`
     );
-    onClose();
   };
 
   return (

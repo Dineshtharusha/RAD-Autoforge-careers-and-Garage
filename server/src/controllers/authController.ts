@@ -34,8 +34,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Role can only be customer by default unless explicitly designated (or seeded)
-    const assignedRole = role === 'admin' ? 'admin' : (role === 'technician' ? 'technician' : 'customer');
+    // Public registrations are strictly restricted to the 'customer' role. Admin accounts cannot be self-assigned.
+    const assignedRole = 'customer';
 
     // Generate 6-digit numeric OTP for instant user entry
     const signupOTP = generateNumericOTP();
